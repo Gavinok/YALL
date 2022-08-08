@@ -95,15 +95,126 @@ token Reader::next(){
   ++iter;
   return tmp;
 };
+sexpr read_list(Reader& r){
+  r.next();
+  DBG("value stored in list " << r.peak());
+  std::vector<expression> exprs;
+  while(r.peak() != ")"){
+    exprs.push_back(read_form(r));
+  }
+  r.next();
+  return sexpr(exprs);
+};
 
+bool is_number(std::string s){
+  for(char& c: s){
+    if(!std::isdigit(c))
+      return false;
+  }
+  return true;
+}
+int to_number(std::string s){
+  DBG("reading as a number")
+  return atoi(s.c_str());
 }
 
+bool is_symbol(std::string s){
+  for(char& c: s){
+    if(!std::isalpha(c))
+      return false;
+  }
+  return true;
+}
+
+symbol to_symbol(std::string s){
+  DBG("reading as a symbol")
+  return s;
+}
+
+bool is_boolean(std::string s){
+  if (s.size() == 2 && s[0] == '#' && (s[1] == 'f' || s[1] == 't'))
+    return true;
+  return false;
+}
+
+boolean to_boolean(std::string s){
+  DBG("reading as a bool")
+  if ( s == "#t") return boolean{true};
+  if ( s == "#f") return boolean{false};
+  throw std::runtime_error("Could not determin type of boolean");
+}
+
+bool is_builtin(std::string s){
+  if (s.size() != 1)
+    return false;
+
+  switch (s[0]){
+  case '+': return true;
+  case '-': return true;
+  case '*': return true;
+  case '=': return true;
   }
 
+  return false;
+}
+sexpr read_atom(Reader& r){
+  if (is_number(r.peak()))  return to_number(r.next());
+  if (is_symbol(r.peak()))  return to_symbol(r.next());
+  if (is_boolean(r.peak())) return to_boolean(r.next());
+  if (is_builtin(r.peak())) return to_symbol(r.next());
+  throw std::runtime_error("Expression could not be matched to an atom" + r.peak());
+};
+
+sexpr read_form(Reader& r){
+  if (r.peak() == ";"){
+    DBG("Comment found " << r.peak());
+    while (r.next() != "\n");
+  }
+  DBG("Current val in read_form " << r.peak())
+  if (r.peak() == "(")
+    return read_list(r);
+  return read_atom(r);
 }
 
+// NOTE Default args seems to break recursion
+std::string pr_str(sexpr s){ return pr_str(s, std::string("")); }
+std::string pr_str(sexpr s, std::string accum) {
+  using str = std::string;
+  using subexprs = expression::subexprs;
+  using fn = expression::lisp_function;
+  auto subexpr_to_string = [&accum](subexprs x) {
+    str s("(");
+    for (auto v : x){
+      s += pr_str(v.value(), accum) + " ";
     }
+    s.back() = ')';
+    return s;
+  };
 
+  // TODO this should not be necessary to call std::to_string
+  auto numbers_to_string = [](int x) { return std::to_string(x); };
+  auto symbol_to_string = [](symbol x) { return x; };
+  auto func_to_string = [](fn x [[gnu::unused]]) -> str {
+    return "#<YALL Function>";
+  };
+  auto boolean_to_string = [](boolean x) -> str {
+    if (x.value) return "#t";
+    else         return "#f";
+  };
+  return std::visit(overloaded
+                    {
+                      subexpr_to_string,
+                      symbol_to_string,
+                      numbers_to_string,
+                      boolean_to_string,
+                      func_to_string
+                    }, s);
+}
+
+// The base type of an expression in the grammer this is represented
+// by <symbolic-expression>
+expression::expression(sexpr s) {
+  expr = s;
 };
 // TODO Delete subexpressions
 expression::~expression() = default;
@@ -112,4 +223,12 @@ sexpr& expression::value () {
   return expr;
 }
 
+expression read_string(std::string str){
+  Reader r(tokenizer(str));
+  return expression(read_form(r));
+}
 
+expression READ(std::string str) {
+  Reader r (tokenizer(str));
+  return expression(read_form(r));
+}
