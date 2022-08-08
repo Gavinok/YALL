@@ -3,7 +3,6 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
 set(CMAKE_VERBOSE_MAKEFILE true)
 set(CMAKE_EXPORT_COMPILE_COMMANDS true)
-add_library(libs lib/s_math.cpp)
 
 option(ENABLE_EXTRA_CHECKS "Enabel Additional Warnings and Sanitizer Checks" false)
 if (ENABLE_EXTRA_CHECKS)
