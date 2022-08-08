@@ -50,6 +50,18 @@ public:
 private:
   sexpr expr;
 };
+using token = std::string;
+class Reader{
+public:
+  Reader(std::vector<std::string> tokens);
+  token peak();
+  token next();
+private:
+  std::vector<token>::iterator iter;
+  std::vector<token> tokens_;
+};
+
+std::vector<token> tokenizer(std::string str);
 std::ostream &operator<<(std::ostream &os, const expression &expr);
 expression READ(std::string s);
 #endif
