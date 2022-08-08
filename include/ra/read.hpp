@@ -36,7 +36,7 @@ public:
   // TODO replace int with a generalized type that can be used for anything
   using subexprs = std::vector<expression>;
   using lisp_function = std::function<expression(std::vector<expression>)>;
-  using sexpr = std::variant<lisp_function,subexprs, int, symbol, boolean>;
+  using sexpr = std::variant<symbol, lisp_function, subexprs, int, boolean>;
   expression(sexpr s);
   expression(expression& e) = default;
   ~expression();
