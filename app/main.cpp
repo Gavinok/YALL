@@ -1,20 +1,28 @@
 #include "ra/read.hpp"
+#include <cstring>
+#include <iostream>
 
-class environment {
-public:
-  // TODO map of symbols?
+
+// XXX Temperary hack just so I can get output form an rvalue
+std::string PRINT(expression e){
+  return pr_str(e.value());
 };
 
-// TODO handle C-d
 // the default read-eval-print-loop
-void REPL(){
-  // loop
+void REPL(bool prompt){
   std::string line;
-  for (;;) {
-    std::cout << '>';
-    std::getline(std::cin, line);
-    // TODO EVAL
-    std::cout << *READ(line.begin(), line.end()) << '\n';
+  auto prompter = [prompt]{
+    if (prompt)
+      std::cout << "> ";
+  };
+  prompter();
+  environment env;
+  // loop
+  while (std::getline(std::cin, line)){
+    // TODO eval
+    expression e = READ(line);
+    std::cout << PRINT(e) << std::endl;
+    prompter();
   }
 }
 
