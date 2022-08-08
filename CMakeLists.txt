@@ -20,12 +20,19 @@ find_package(Catch2 REQUIRED)
 add_library(read lib/read.cpp)
 target_include_directories(read PUBLIC include)
 
+add_library(eval lib/eval.cpp)
+target_include_directories(eval PUBLIC include)
+
 add_executable(lisp app/main.cpp)
 target_include_directories(lisp PUBLIC include)
-target_link_libraries(lisp read Catch2::Catch2)
+target_link_libraries(lisp read eval Catch2::Catch2)
 
 
 add_executable(test_read app/tests_read.cpp)
 target_include_directories(test_read PUBLIC include)
 target_link_libraries(test_read read Catch2::Catch2)
+
+add_executable(test_eval app/tests_eval.cpp)
+target_include_directories(test_eval PUBLIC include)
+target_link_libraries(test_eval eval read Catch2::Catch2)
 

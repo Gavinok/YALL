@@ -18,6 +18,11 @@ void REPL(){
   }
 }
 
-int main (){
-  REPL();
+int main (int argc, char *argv[]){
+  if ( (argc == 2) && (strncmp(argv[1] ,"--interactive", 13) == 0) ){
+    REPL(true);
+    return 0;
+  }
+  REPL(false);
+  return 0;
 }
