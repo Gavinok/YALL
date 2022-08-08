@@ -78,7 +78,23 @@ std::vector<token> tokenizer(std::string str){
   return tokens;
 }
 
+// TODO add special case for comments
+Reader::Reader(std::vector<token> tokens){
+  tokens_ = tokens;
+  iter = tokens_.begin();
+};
+token Reader::peak(){
+  if (iter == tokens_.end())
+    throw std::runtime_error("end of reader");
+  return *iter;
 }
+token Reader::next(){
+  if (iter == tokens_.end())
+    throw std::runtime_error("end of reader");
+  token tmp = *iter;
+  ++iter;
+  return tmp;
+};
 
 }
 
@@ -89,5 +105,11 @@ std::vector<token> tokenizer(std::string str){
     }
 
 };
+// TODO Delete subexpressions
+expression::~expression() = default;
+
+sexpr& expression::value () {
+  return expr;
+}
 
 
