@@ -45,12 +45,7 @@ public:
   ~expression();
   expression(const expression& other) = default;
   sexpr& value();
-  // void open ();
-  // void close ();
-  // bool expressionStarted();
   std::vector<sexpr> expressions() const;
-  // void pushSymbol(const symbol& x);
-  // void push_subexpression(expression* e);
 
 private:
   sexpr expr;
