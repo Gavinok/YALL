@@ -41,8 +41,8 @@ public:
   expression(expression& e) = default;
   ~expression();
   expression(const expression& other) = default;
+  // Return a reference to the expression contained within
   sexpr& value();
-  std::vector<sexpr> expressions() const;
 
 private:
   sexpr expr;
