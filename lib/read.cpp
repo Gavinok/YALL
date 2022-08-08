@@ -23,7 +23,7 @@ std::vector<token> tokenizer(std::string str){
     store_cur(cur);
     tokens.push_back(tok);
   };
-  for (auto c = str.begin(); c != str.end(); c++){
+  for (auto c = str.begin(); c != str.end(); ++c){
     // TODO handle comments as a single token
     switch (*c){
       // structure
