@@ -1,5 +1,11 @@
-#ifndef INTERVAL
-#define INTERVAL
+#ifndef READF
+#define READF
+// #define MY_DEBUG
+#ifdef MY_DEBUG
+#define DBG(X) { std::cout << X << std::endl; }
+#else
+#define DBG(X) {}
+#endif
 
 #include <cstddef>
 #include <functional>
