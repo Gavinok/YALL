@@ -29,9 +29,6 @@ template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 // TODO determin how the actual primitive type should be obtained
 
 struct boolean {
-  // boolean(bool b){
-  //   value = b;
-  // };
   bool value;
 };
 class expression {
