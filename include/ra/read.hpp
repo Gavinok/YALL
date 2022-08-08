@@ -24,6 +24,16 @@ template<class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
 // explicit deduction guide (not needed as of C++20)
 template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
+// TODO Determin if this should just reference a value or if it should
+// contain it.
+// TODO determin how the actual primitive type should be obtained
+
+struct boolean {
+  // boolean(bool b){
+  //   value = b;
+  // };
+  bool value;
+};
 class expression {
 public:
   // TODO replace int with a generalized type that can be used for anything
