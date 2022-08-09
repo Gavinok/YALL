@@ -35,14 +35,23 @@ public:
                      }
                    );
     }},
-    {"car" , [](args operands) -> sexpr {
-      return sexpr(std::get<expression::subexprs>(operands.at(0).value()).front().value());
+    {"if" , [](args operands) -> sexpr {
+      if (operands.size() == 2) {
+        auto condition = std::get<boolean>(operands[0].value());
+        if (condition.value)
+          return operands[1].value();
+        else
+          return boolean{false};
+      }
+      if (operands.size() == 3) {
+        auto condition = std::get<boolean>(operands[0].value());
+        if (condition.value)
+          return operands[1].value();
+        else
+          return operands[2].value();
+      }
+      throw std::runtime_error("if expects at least 2 arguments");
     }},
-    {"cdr" , [](args operands) -> sexpr {
-      auto tmp = std::get<expression::subexprs>(operands.at(0).value());
-      return expression::subexprs(tmp.begin()+1, tmp.end());
-    }}
-  };
      {"eq" , [](args operands) -> sexpr {
        return sexpr(
                     boolean{
@@ -56,6 +65,14 @@ public:
                         operands[1].value())
                         });
      }},
+     {"car" , [](args operands) -> sexpr {
+       return sexpr(std::get<expression::subexprs>(operands.at(0).value()).front().value());
+     }},
+     {"cdr" , [](args operands) -> sexpr {
+       auto tmp = std::get<expression::subexprs>(operands.at(0).value());
+       return expression::subexprs(tmp.begin()+1, tmp.end());
+     }}
+    };
 };
 
 expression::sexpr& eval_subexpressions(expression& expr, environment& env);
