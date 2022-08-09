@@ -193,6 +193,10 @@ std::string pr_str(sexpr s, std::string accum) {
     for (auto& v : x){
       s += pr_str(v.value(), accum) + " ";
     }
+
+    if (s.size() == 1)
+      return s + ')';
+
     s.back() = ')';
     return s;
   };
