@@ -65,23 +65,29 @@ TEST_CASE("basic eval with equality false"){
   CHECK(std::get<boolean>(tru_eval(e, ev)).value == false);
 }
 
-TEST_CASE("basic eval with eql false"){
+TEST_CASE("basic eval with eq false"){
   environment ev;
-  auto e = READ("(eql 3 2)");
+  auto e = READ("(eq 3 2)");
   CHECK(std::get<boolean>(tru_eval(e, ev)).value == false);
 }
 
-TEST_CASE("basic eval with eql true"){
+// TODO
+TEST_CASE("basic eval with eq true symbol"){
   environment ev;
-  auto e = READ("(eql 2 2)");
+  auto e = READ("(eq (quote a) (quote a))");
   CHECK(std::get<boolean>(tru_eval(e, ev)).value == true);
 }
 
-// TODO determine how I should handle unbound variables
-TEST_CASE("basic eval with unbound value"){
+TEST_CASE("basic eval with eq false symbol"){
   environment ev;
-  auto e = EVAL(READ("a"));
-  std::cout << pr_str(e.value()) << std::endl;
+  auto e = READ("(eq (quote a) (quote b))");
+  CHECK(std::get<boolean>(tru_eval(e, ev)).value == false);
+}
+
+TEST_CASE("basic eval with eq true"){
+  environment ev;
+  auto e = READ("(eq 2 2)");
+  CHECK(std::get<boolean>(tru_eval(e, ev)).value == true);
 }
 
 TEST_CASE("basic eval with nested lists"){

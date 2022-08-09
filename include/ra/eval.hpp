@@ -1,5 +1,5 @@
-#ifndef EVAL
-#define EVAL
+#ifndef EVALH
+#define EVALH
 
 #include <map>
 #include <memory>
@@ -35,19 +35,6 @@ public:
                      }
                    );
     }},
-    {"eql" , [](args operands) -> sexpr {
-      return sexpr(
-                   boolean{
-                     std::visit(overloaded{
-                         [](int& a, int& b){ return a == b;},
-                           // TODO properly compair symbols
-                         [](symbol& a, symbol& b){ return a[0] == b[0];},
-                         [](boolean& a, boolean& b){ return a.value == b.value; },
-                         [](auto& a [[gnu::unused]], auto& b [[gnu::unused]]){ return false; }},
-                       operands[0].value(),
-                       operands[1].value())
-                       });
-    }},
     {"car" , [](args operands) -> sexpr {
       return sexpr(std::get<expression::subexprs>(operands.at(0).value()).front().value());
     }},
@@ -56,6 +43,19 @@ public:
       return expression::subexprs(tmp.begin()+1, tmp.end());
     }}
   };
+     {"eq" , [](args operands) -> sexpr {
+       return sexpr(
+                    boolean{
+                      std::visit(overloaded{
+                          [](int& a, int& b){ return a == b;},
+                          // TODO properly compair symbols
+                          [](symbol& a, symbol& b){ return a[0] == b[0];},
+                          [](boolean& a, boolean& b){ return a.value == b.value; },
+                          [](auto& a [[gnu::unused]], auto& b [[gnu::unused]]){ return false; }},
+                        operands[0].value(),
+                        operands[1].value())
+                        });
+     }},
 };
 
 expression::sexpr& eval_subexpressions(expression& expr, environment& env);
