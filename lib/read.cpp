@@ -171,7 +171,10 @@ sexpr read_form(Reader& r){
     while (r.next() != "\n");
   }
   // Unless this is a comment disregard the newlines
-  if(r.peak() == "\n") r.next();
+  if(r.peak() == "\n") {
+    r.next();
+    return read_form(r);
+  }
 
   DBG("Current val in read_form " << r.peak())
   if (r.peak() == "(")
