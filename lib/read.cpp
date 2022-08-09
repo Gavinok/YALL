@@ -170,6 +170,9 @@ sexpr read_form(Reader& r){
     DBG("Comment found " << r.peak());
     while (r.next() != "\n");
   }
+  // Unless this is a comment disregard the newlines
+  if(r.peak() == "\n") r.next();
+
   DBG("Current val in read_form " << r.peak())
   if (r.peak() == "(")
     return read_list(r);
