@@ -122,3 +122,58 @@ TEST_CASE("new values in the environment with let"){
 }
 
 
+TEST_CASE("missing bunding in let block"){
+  environment ev;
+  auto e = READ("(let ((x 1)\n(y 32))\n q)");
+  CHECK_THROWS(tru_eval(e, ev));
+}
+
+TEST_CASE("Access outer block from let block"){
+  environment ev;
+  auto e = READ("(define x 30)");
+  sexpr s = tru_eval(e, ev);
+  e = READ("(let ((y 32))\n (+ x y))");
+  auto tmp = std::get<int>(tru_eval(e, ev));
+  CHECK(tmp == 62);
+}
+
+TEST_CASE("Shadowing with let blocks"){
+  environment ev;
+  auto e = READ("(define x 30)");
+  sexpr s = tru_eval(e, ev);
+  e = READ("(let ((x 32)(y 32))\n (+ x y))");
+  auto tmp = std::get<int>(tru_eval(e, ev));
+  CHECK(tmp == 64);
+}
+
+TEST_CASE("Nested let blocks"){
+  environment ev;
+  auto e = READ("(let ((x 32)(y 32))\n(let ((y 5))\n(+ x y)))");
+  auto tmp = std::get<int>(tru_eval(e, ev));
+  CHECK(tmp == 37);
+}
+
+TEST_CASE("Check simple 2 arg if statments"){
+  environment ev;
+  auto e = READ("(if (= 1 1)\n (+ 2 2))");
+  auto tmp = std::get<int>(tru_eval(e, ev));
+  CHECK(tmp == 4);
+}
+
+TEST_CASE("Check simple 3 arg if statments true"){
+  environment ev;
+  auto e = READ("(if (= 1 1)\n (+ 2 2)\n (+ 3 2))");
+  auto tmp = std::get<int>(tru_eval(e, ev));
+  CHECK(tmp == 4);
+}
+
+TEST_CASE("Check simple 3 arg if statments false"){
+  environment ev;
+  auto e = READ(R"((if (= 1 2)
+                       ; then
+                       (+ 2 2)
+                       ; else
+                       (+ 3 2)))");
+  auto tmp = std::get<int>(tru_eval(e, ev));
+  CHECK(tmp == 5);
+}
