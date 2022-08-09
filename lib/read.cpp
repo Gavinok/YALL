@@ -185,9 +185,9 @@ std::string pr_str(sexpr s, std::string accum) {
   using str = std::string;
   using subexprs = expression::subexprs;
   using fn = expression::lisp_function;
-  auto subexpr_to_string = [&accum](subexprs x) {
+  auto subexpr_to_string = [&accum](subexprs& x) {
     str s("(");
-    for (auto v : x){
+    for (auto& v : x){
       s += pr_str(v.value(), accum) + " ";
     }
     s.back() = ')';
@@ -195,12 +195,12 @@ std::string pr_str(sexpr s, std::string accum) {
   };
 
   // TODO this should not be necessary to call std::to_string
-  auto numbers_to_string = [](int x) { return std::to_string(x); };
-  auto symbol_to_string = [](symbol x) { return x; };
-  auto func_to_string = [](fn x [[gnu::unused]]) -> str {
+  auto numbers_to_string = [](int& x) { return std::to_string(x); };
+  auto symbol_to_string  = [](symbol& x) { return x; };
+  auto func_to_string    = [](fn& x [[gnu::unused]]) -> str {
     return "#<YALL Function>";
   };
-  auto boolean_to_string = [](boolean x) -> str {
+  auto boolean_to_string = [](boolean& x) -> str {
     if (x.value) return "#t";
     else         return "#f";
   };
