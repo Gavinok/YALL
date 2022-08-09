@@ -4,9 +4,20 @@ using subexprs = expression::subexprs;
 using lisp_function = expression::lisp_function;
 using sexpr = expression::sexpr;
 
+// sexpr& environment::get(symbol s){
+//   DBG("Looking up binding for " + pr_str(s));
+//   return bindings.at(s);
+// }
 sexpr& environment::get(symbol s){
+  try {
+    return bindings.at(s);
+  } catch (...){
+    // TODO catch the exact exception when the binding can not be resolved
+    if (outer_scopes)
+      return outer_scopes->get(s);
+  }
   DBG("Looking up binding for " + pr_str(s));
-  return bindings.at(s);
+  throw std::runtime_error("Could not resolve binding for " + pr_str(s));
 }
 sexpr& environment::set(symbol s, sexpr expr){
   DBG("Defining binding for up binding for " + pr_str(s));
@@ -18,7 +29,9 @@ sexpr& tru_eval(expression& expr, environment& env){
         [&expr, &env](subexprs& s) -> sexpr {
           // EMPTY LIST
           if(s.size() == 0) return s;
+
           if(const symbol* e = std::get_if<symbol>(&s.front().value())){
+
             // SPECIAL FORMS
             // Defining new variables
             if (*e == "define"){
@@ -27,10 +40,9 @@ sexpr& tru_eval(expression& expr, environment& env){
               env.set(x, tru_eval(s.at(2), env));
               return s.at(2).value();
             }
-            // TODO Allow let to search outer environments
             if (*e == "let"){
               DBG("yep it's being defined with let");
-              environment let_env;
+              environment let_env(env);
               subexprs let_bindings = std::get<subexprs>(s.at(1).value());
               for(auto& binding: let_bindings){
                 subexprs binding_args = std::get<subexprs>(binding.value());

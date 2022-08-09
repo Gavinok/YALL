@@ -11,13 +11,19 @@ class environment {
 public:
   // TODO map of symbols?
   environment(){}
+  // XXX This use of a raw pointer should be replaced with something easier to manage
+  environment(environment* e): outer_scopes(e){};
   ~environment(){
     DBG("Destructing environment");
   }
   std::function<int(args)>& constructArgs(symbol s);
   sexpr& get(symbol s);
   sexpr& set(symbol s, sexpr expr);
-// private:
+private:
+  // Representation of the outer environments. Specifically intended to be used with `let`
+  // XXX This use of a raw pointer should be replaced with something easier to manage
+  environment* outer_scopes = nullptr;
+  // Default environment bindings
   std::map<symbol, sexpr> bindings{
     {"+" , [](args operands) -> sexpr {
       return std::get<int>(operands[0].value()) + std::get<int>(operands[1].value());
