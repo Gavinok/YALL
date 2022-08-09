@@ -1,3 +1,4 @@
+#include "ra/eval.hpp"
 #include "ra/read.hpp"
 #include <cstring>
 #include <iostream>
@@ -21,7 +22,7 @@ void REPL(bool prompt){
   while (std::getline(std::cin, line)){
     // TODO eval
     expression e = READ(line);
-    std::cout << PRINT(e) << std::endl;
+    std::cout << PRINT(tru_eval(e, env)) << std::endl;
     prompter();
   }
 }
