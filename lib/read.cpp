@@ -220,10 +220,13 @@ std::string pr_str(sexpr s, std::string accum) {
 // The base type of an expression in the grammer this is represented
 // by <symbolic-expression>
 expression::expression(sexpr s) {
+  DBG("Constructing Expression With " + pr_str(s));
   expr = s;
 };
 // TODO Delete subexpressions
-expression::~expression() = default;
+expression::~expression() {
+  DBG("Destructing expression")
+};
 
 sexpr& expression::value () {
   return expr;
