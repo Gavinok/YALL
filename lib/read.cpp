@@ -24,7 +24,6 @@ std::vector<token> tokenizer(std::string str){
     tokens.push_back(tok);
   };
   for (auto c = str.begin(); c != str.end(); ++c){
-    // TODO handle comments as a single token
     switch (*c){
       // structure
     case '(':
@@ -68,7 +67,7 @@ std::vector<token> tokenizer(std::string str){
         cur.push_back(*c);
         break;
       } else
-        throw std::runtime_error("symbols only support alpha numerics");
+        throw std::runtime_error("Symbols only support alpha numerics");
     }
   }
   store_cur(cur);
@@ -77,12 +76,12 @@ std::vector<token> tokenizer(std::string str){
 
 token Reader::peak(){
   if (iter == tokens_.end())
-    throw std::runtime_error("end of reader");
+    throw std::runtime_error("end of reader on peak");
   return *iter;
 }
 token Reader::next(){
   if (iter == tokens_.end())
-    throw std::runtime_error("end of reader");
+    throw std::runtime_error("end of reader on next");
   token tmp = *iter;
   ++iter;
   return tmp;
