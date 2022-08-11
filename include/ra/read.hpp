@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 #include <variant>
+#include <memory>
 #include <optional>
 using symbol = std::string;
 // These overload templates are taken from
