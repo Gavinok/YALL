@@ -142,30 +142,19 @@ sexpr& tru_eval(expression& expr, environment& env){
 
 sexpr& eval_subexpressions(expression& expr, environment& env){
   expr = expression(std::visit(overloaded{
-      [&env](symbol& s) -> sexpr { return env.get(s); },
-      [&env](subexprs& s) -> sexpr {
-        auto exprs = s;
+      [&env](symbol& sym) -> sexpr { return env.get(sym); },
+      [&env](subexprs& expressions) -> sexpr {
         subexprs accumulater;
-        for(expression& e: exprs)
-          accumulater.push_back(expression(expand(e.value(), env)));
+        for(expression& e: expressions){
+          DBG("accumulating the value of expression " + pr_str(e.value()));
+          accumulater.push_back(expression(tru_eval(e, env)));
+        }
         return sexpr(accumulater);
-      },
-      [](auto& a) -> sexpr {
-        DBG("Unable to determin type");
-        return a;
-      }}
+     },
+     [](auto& anything_else) -> sexpr {
+       DBG("Unable to determin type");
+       return anything_else;
+     }}
       , expr.value()));
   return expr.value();
-}
-
-sexpr expand(sexpr s, environment env){
-  return std::visit(overloaded{
-      [&env]    (subexprs& a)-> sexpr {
-        auto e = expression(sexpr(a));
-        return tru_eval(e, env);
-      },
-      [&env]    (symbol& a) -> sexpr { return env.get(a); },
-      []        (auto& a)   -> sexpr { return a; }
-      }
-    ,s);
 }
