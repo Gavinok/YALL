@@ -43,20 +43,18 @@ private:
                    );
     }},
     {"if" , [](args operands) -> sexpr {
-      if (operands.size() == 2) {
-        auto condition = std::get<boolean>(operands[0].value());
-        if (condition.value)
-          return operands[1].value();
-        else
-          return boolean{false};
-      }
-      if (operands.size() == 3) {
-        auto condition = std::get<boolean>(operands[0].value());
-        if (condition.value)
-          return operands[1].value();
-        else
+      auto condition = std::get<boolean>(operands[0].value());
+      if (condition.value)
+        return operands[1].value();
+      else
+
+        if (operands.size() == 3)
           return operands[2].value();
-      }
+
+        else
+          if (operands.size() == 2)
+            return boolean{false};
+
       throw std::runtime_error("if expects at least 2 arguments");
     }},
     {"eq" , [](args operands) -> sexpr {
