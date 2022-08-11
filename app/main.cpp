@@ -8,25 +8,7 @@ std::string PRINT(expression::sexpr& e){
   return pr_str(e);
 };
 
-bool getexpression(std::istream& is, std::string& expression_container){
-  int parens = 0;
-  expression_container.clear();
-  std::string accumulator;
-  while (std::getline(is, accumulator)){
-    // Ignore blank lines
-    if (accumulator.empty()) return true;
-    for(auto c : accumulator){
-      if (c == '(') ++parens;
-      if (c == ')') --parens;
-      DBG("there are this many parens left to match " + std::to_string(parens));
-    }
-    expression_container.append(accumulator);
-    std::cout << "reading in" << expression_container << std::endl;
-    if (parens == 0) return true;
-  }
-  return false;
-}
-// the default read-eval-print-loop
+// The default read-eval-print-loop
 void REPL(bool prompt){
   std::string line;
   auto prompter = [prompt]{
@@ -36,13 +18,13 @@ void REPL(bool prompt){
   prompter();
   environment env;
   // loop
-  // TODO Support multi line input
-  int parens = 0;
-  while (getexpression(std::cin, line)){
-    if (line.empty()) continue;
-    expression e = READ(line);
-    std::cout << PRINT(tru_eval(e, env)) << std::endl;
-    prompter();
+  for (;;){
+    if (auto e = READ(std::cin)){
+      std::cout << PRINT(tru_eval(*e, env)) << std::endl;
+      prompter();
+    } else {
+      break;
+    }
   }
 }
 

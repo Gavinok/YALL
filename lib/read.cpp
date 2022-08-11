@@ -43,13 +43,6 @@ std::vector<token> tokenizer(std::string str){
     case '\n':
       store_cur_and_push(cur, "\n");
       break;
-    case ' ':
-      store_cur(cur);
-      break;
-    case '\t':
-      store_cur(cur);
-      break;
-      // Builtins
     case '+':
       store_cur_and_push(cur, "+");
       break;
@@ -67,6 +60,10 @@ std::vector<token> tokenizer(std::string str){
       cur.push_back(*c);
       break;
     default:
+      if (isspace(*c)){
+        store_cur(cur);
+        break;
+      }
       if(isalpha(*c) || isdigit(*c)){
         cur.push_back(*c);
         break;
@@ -164,12 +161,19 @@ sexpr read_atom(Reader& r){
   if (is_builtin(r.peak())) return to_symbol(r.next());
   throw std::runtime_error("Expression could not be matched to an atom" + r.peak());
 };
-
-sexpr read_form(Reader& r){
+void skip_comment(Reader& r) {
   if (r.peak() == ";"){
     DBG("Comment found " << r.peak());
-    while (r.next() != "\n");
+    while (r.next() != "\n")
+      std::cout << "skipping comment" << std::endl;
+    std::cout << "comment skipped" << std::endl;
   }
+  r.peak();
+}
+sexpr read_form(Reader& r) {
+  DBG("Currently reading form");
+  skip_comment(r);
+
   // Unless this is a comment disregard the newlines
   if(r.peak() == "\n") {
     r.next();
@@ -241,7 +245,39 @@ expression read_string(std::string str){
   return expression(read_form(r));
 }
 
-expression READ(std::string str) {
-  Reader r (tokenizer(str));
-  return expression(read_form(r));
+std::optional<expression> READ(std::istream& is) {
+  std::string expression_container;
+  std::string accumulator;
+  int open_parens = 0;
+  while (std::getline(is, accumulator)){
+    open_parens = 0;
+
+    if (accumulator.empty()) continue; // skip blank lines
+
+    expression_container += accumulator;
+    Reader r(tokenizer(expression_container));
+
+    try {
+
+      try {// Skip blank lines early and comments early
+        skip_comment(r);
+        if(r.peak() == "\n") {
+          r.next();
+        }
+      } catch (...) { // this line either only contained comments or was blank
+        // TODO more explicit version
+        return std::nullopt;
+      }
+
+      return read_form(r);
+
+    } catch (...){ // handle unclosed parentheses
+      // TODO this should probably only catch the error associated with parenthesis
+      ++open_parens;
+      expression_container += "\n";
+    }
+  }
+  if (open_parens > 0)
+    throw std::runtime_error ("End of file with open parentheses");
+  return std::nullopt;
 }

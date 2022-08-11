@@ -236,6 +236,88 @@ TEST_CASE("Check read_form ignore comments", "[constructor]") {
     checker(i->value());
   }
 }
+TEST_CASE("Check read_form ignore comments in math", "[constructor]") {
+  read_string(R"((+ 1 (+ 2 ;# thi )))
+3)))");
+}
+TEST_CASE("Check read from stream"){
+  std::istringstream in("1");
+    // rational<int> x;
+    // in >> x;
+    // CHECK(x == rational(-11 , 20));
+  auto e = READ(in);
+  CHECK(pr_str(e->value()) == "1");
+}
+
+TEST_CASE("Check read from stream multiline"){
+  std::istringstream in("(1\n2)");
+  auto e = READ(in);
+  CHECK(pr_str(std::get<expression::subexprs>(e->value()).front().value()) == "1");
+}
+
+TEST_CASE("Check read from stream multiline with comment in form "){
+  std::istringstream in("(1 ; hello\n2)");
+  auto e = READ(in);
+  CHECK(pr_str(std::get<expression::subexprs>(e->value()).front().value()) == "1");
+  CHECK(pr_str(std::get<expression::subexprs>(e->value()).at(1).value()) == "2");
+}
+
+TEST_CASE("Check read from stream multiline with comment after form"){
+  std::istringstream in("(1 \n2) ; hello");
+  auto e = READ(in);
+  CHECK(pr_str(std::get<expression::subexprs>(e->value()).front().value()) == "1");
+  CHECK(pr_str(std::get<expression::subexprs>(e->value()).at(1).value()) == "2");
+}
+
+TEST_CASE("Check read on unclosed paren", "[constructor]") {
+  std::istringstream in("(");
+  CHECK_THROWS(READ(in));
+}
+
+TEST_CASE("Check read on only closed paren", "[constructor]") {
+  std::istringstream in("(");
+  CHECK_THROWS(READ(in));
+}
+
+TEST_CASE("Check read on only open paren with comment", "[constructor]") {
+  std::istringstream in("( ;");
+  CHECK_THROWS(READ(in));
+}
+
+TEST_CASE("Check read on only open paren with comment and new line", "[constructor]") {
+  std::istringstream in("( ;\n");
+  CHECK_THROWS(READ(in));
+}
+
+TEST_CASE("Check read on only hash", "[constructor]") {
+  std::istringstream in("#");
+  CHECK_THROWS(READ(in));
+}
+
+TEST_CASE("Check read on empty line", "[constructor]") {
+  std::istringstream in("");
+  auto e = READ(in);
+  CHECK_FALSE(e.has_value());
+}
+
+TEST_CASE("Check read only new line", "[constructor]") {
+  std::istringstream in("\n");
+  auto e = READ(in);
+  CHECK_FALSE(e.has_value());
+}
+
+TEST_CASE("Check read whitespace empty line", "[constructor]") {
+  std::istringstream in(" ");
+  auto e = READ(in);
+  CHECK_FALSE(e.has_value());
+}
+
+TEST_CASE("Check read ignore line comments", "[constructor]") {
+  std::istringstream in("; hello");
+  auto e = READ(in);
+  CHECK_FALSE(e.has_value());
+}
+
 TEST_CASE("Check read_form handle built in symbols", "[constructor]") {
   using subexprs = expression::subexprs;
   auto t = tokenizer("(- * = (+ 3) 4)");

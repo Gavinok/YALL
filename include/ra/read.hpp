@@ -60,7 +60,8 @@ private:
 
 std::vector<token> tokenizer(std::string str);
 std::ostream &operator<<(std::ostream &os, const expression &expr);
-expression READ(std::string s);
+std::optional<expression> READ(std::istream& is);
+expression read_string(std::string str);
 expression::sexpr read_list(Reader& r);
 expression::sexpr read_atom(Reader& r);
 expression::sexpr read_form(Reader& r);
