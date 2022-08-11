@@ -24,6 +24,50 @@ sexpr& environment::set(symbol s, sexpr expr){
   return bindings[s] = expr;
 };
 
+sexpr create_lambda(subexprs& sub_expressions, environment& env){
+  DBG("It's a lambda definition");
+
+  auto arg_symbols = std::get<subexprs>(sub_expressions.at(1).value());
+  auto body = sub_expressions.at(2);
+
+  DBG("Constructing Lambda");
+
+  // TODO passing by value is gonna be a bottleneck
+  auto lambda = [env, body, arg_symbols](environment::args lambda_args) -> sexpr {
+    environment lambda_env(env);
+
+    DBG("Getting lambda list");
+    DBG("lambda list found");
+
+    auto arg_expers = arg_symbols;
+    auto expr = body;
+
+    // Ensure proper number of arguments are passed
+    if (arg_symbols.size() != lambda_args.size())
+      throw std::runtime_error ("Wrong number of arguments passed. Expected "
+                                + std::to_string(lambda_args.size()));
+
+    // Bind arguments to the current environment
+    for (auto sym = arg_expers.begin(), arg = lambda_args.begin();
+         arg != lambda_args.end() && sym != arg_expers.end();
+         ++sym, ++arg) {
+
+      DBG("lambda list determining argument symbols");
+      DBG("binding " + pr_str((*sym).value()));
+
+      lambda_env.set(std::get<symbol>((*sym).value()),
+                     tru_eval(*arg , lambda_env));
+
+      DBG("lambda list symbols are now bound");
+
+    }
+    return tru_eval(expr , lambda_env);
+  };
+
+  DBG("New lambda defined");
+
+  return lambda;
+}
 sexpr& tru_eval(expression& expr, environment& env){
   expr = expression(std::visit(overloaded{
         [&expr, &env](subexprs& s) -> sexpr {
