@@ -192,32 +192,33 @@ std::string pr_str(sexpr s, std::string accum) {
   using str = std::string;
   using subexprs = expression::subexprs;
   using fn = expression::lisp_function;
-  auto subexpr_to_string = [&accum](subexprs& x) {
-    str s("(");
-    for (auto& v : x){
-      s += pr_str(v.value(), accum) + " ";
+  auto quote_to_string = [](quoted<expression>& quoted_e) {
+    return pr_str((*(quoted_e.value)).value());
+  };
+  auto subexpr_to_string = [&accum](subexprs& expressions) {
+    str str_representation("(");
+    for (auto& v : expressions){
+      str_representation += pr_str(v.value(), accum) + " ";
     }
 
-    if (s.size() == 1)
-      return s + ')';
+    if (str_representation.size() == 1)
+      return str_representation + ')';
 
-    s.back() = ')';
-    return s;
+    str_representation.back() = ')';
+    return str_representation;
   };
 
   // TODO this should not be necessary to call std::to_string
-  auto numbers_to_string = [](int& x) { return std::to_string(x); };
-  auto symbol_to_string  = [](symbol& x) { return x; };
-  auto func_to_string    = [](fn& x [[gnu::unused]]) -> str {
-    return "#<YALL Function>";
-  };
-  auto boolean_to_string = [](boolean& x) -> str {
-    if (x.value) return "#t";
-    else         return "#f";
+  auto numbers_to_string = [](int& x)                 -> str { return std::to_string(x); };
+  auto symbol_to_string  = [](symbol& x)              -> str { return x; };
+  auto func_to_string    = [](fn& x [[gnu::unused]])  -> str { return "#<YALL Function>"; };
+  auto boolean_to_string = [](boolean& true_or_false) -> str {
+    return true_or_false.value ? "#t" : "#f";
   };
   return std::visit(overloaded
                     {
                       subexpr_to_string,
+                      quote_to_string,
                       symbol_to_string,
                       numbers_to_string,
                       boolean_to_string,

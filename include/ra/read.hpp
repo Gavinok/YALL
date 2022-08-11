@@ -31,12 +31,18 @@ template<class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 struct boolean {
   bool value;
 };
+
+template <class T>
+struct quoted {
+  using type = T;
+  std::shared_ptr<T> value;
+};
+
 class expression {
 public:
-  // TODO replace int with a generalized type that can be used for anything
   using subexprs = std::vector<expression>;
   using lisp_function = std::function<expression(std::vector<expression>)>;
-  using sexpr = std::variant<symbol, lisp_function, subexprs, int, boolean>;
+  using sexpr = std::variant< symbol, quoted<expression>, lisp_function, subexprs, int, boolean >;
   expression(sexpr s);
   expression(expression& e) = default;
   ~expression();

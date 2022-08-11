@@ -58,25 +58,41 @@ private:
       }
       throw std::runtime_error("if expects at least 2 arguments");
     }},
-     {"eq" , [](args operands) -> sexpr {
-       return sexpr(
-                    boolean{
-                      std::visit(overloaded{
-                          [](int& a, int& b){ return a == b;},
-                          // TODO properly compair symbols
-                          [](symbol& a, symbol& b){ return a[0] == b[0];},
-                          [](boolean& a, boolean& b){ return a.value == b.value; },
-                          [](auto& a [[gnu::unused]], auto& b [[gnu::unused]]){ return false; }},
-                        operands[0].value(),
-                        operands[1].value())
-                        });
-     }},
+    {"eq" , [](args operands) -> sexpr {
+      // TODO properly compair symbols
+      auto symbol_compair = [](const symbol& a, const symbol& b){ return a[0] == b[0];};
+      return sexpr(
+                   boolean{
+                     std::visit(overloaded{
+                           [](int& a, int& b){ return a == b;},
+                           [](boolean& a, boolean& b){ return a.value == b.value; },
+                           [&symbol_compair](quoted<expression>& a, quoted<expression>& b){
+                             if (symbol_compair(std::get<symbol>((*(a.value)).value()),
+                                                std::get<symbol>((*(b.value)).value())))
+                               return true;
+                             return false;
+                           },
+                           [](auto& a [[gnu::unused]],
+                              auto& b [[gnu::unused]]){
+                              return false;
+                           }
+                          },
+                       operands[0].value(),
+                       operands[1].value())
+                       });
+    }},
      {"car" , [](args operands) -> sexpr {
-       return sexpr(std::get<expression::subexprs>(operands.at(0).value()).front().value());
+       auto e = (*(std::get<quoted<expression>>(operands.at(0).value()).value));
+       return quoted<expression>{
+         std::make_shared<expression>( std::get< expression::subexprs >( e.value() ).front().value() )
+       };
      }},
      {"cdr" , [](args operands) -> sexpr {
-       auto tmp = std::get<expression::subexprs>(operands.at(0).value());
-       return expression::subexprs(tmp.begin()+1, tmp.end());
+       auto e = (*(std::get<quoted<expression>>(operands.at(0).value()).value)).value();
+       return quoted<expression>{
+         std::make_shared<expression>(expression::subexprs(std::get<expression::subexprs>(e).begin()+1,
+                                                                                   std::get<expression::subexprs>(e).end()))
+       };
      }}
     };
 };
