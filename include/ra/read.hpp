@@ -56,12 +56,12 @@ private:
 using token = std::string;
 class Reader{
 public:
-  Reader(std::vector<std::string> tokens);
+  Reader(std::vector<token> tokens): tokens_(tokens), iter(tokens_.begin()){};
   token peak();
   token next();
 private:
-  std::vector<token>::iterator iter;
   std::vector<token> tokens_;
+  std::vector<token>::iterator iter;
 };
 
 std::vector<token> tokenizer(std::string str);
