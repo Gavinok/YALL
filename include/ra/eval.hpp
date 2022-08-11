@@ -6,9 +6,10 @@
 #include "ra/read.hpp"
 
 class environment {
-  using sexpr = expression::sexpr;
-  using args = std::vector<expression>;
 public:
+  using sexpr = expression::sexpr;
+  using subexprs = expression::subexprs;
+  using args = std::vector<expression>;
   // TODO map of symbols?
   environment(){}
   // XXX This use of a raw pointer should be replaced with something easier to manage
