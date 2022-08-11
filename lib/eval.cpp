@@ -70,46 +70,70 @@ sexpr create_lambda(subexprs& sub_expressions, environment& env){
 }
 sexpr& tru_eval(expression& expr, environment& env){
   expr = expression(std::visit(overloaded{
-        [&expr, &env](subexprs& s) -> sexpr {
+        [&expr, &env](subexprs& sub_expressions) -> sexpr {
+          DBG("Determined to be a sub expression");
+
           // EMPTY LIST
-          if(s.size() == 0) return s;
+          if(sub_expressions.size() == 0) return sub_expressions;
+          DBG("Checking the first of the expressions" + pr_str(sub_expressions.front().value()));
 
-          if(const symbol* e = std::get_if<symbol>(&s.front().value())){
+          return std::visit(overloaded{
+              [&env, &sub_expressions](subexprs nested_function_call [[gnu::unused]]) -> sexpr {
+                DBG("determined to be yet another expression there for it's a nested function call");
+                auto func = std::get<lisp_function>(tru_eval(sub_expressions.front(), env));
+                return func(std::vector(sub_expressions.begin()+1, sub_expressions.end())).value();
+              },
+              [&env, &sub_expressions, &expr](symbol element) -> sexpr {
+                DBG("First arg was a symbol")
 
-            // SPECIAL FORMS
-            // Defining new variables
-            if (*e == "define"){
-              DBG("yep it's being defined");
-              symbol x = std::get<symbol>(s[1].value());
-              env.set(x, tru_eval(s.at(2), env));
-              return s.at(2).value();
-            }
-            if (*e == "let"){
-              DBG("yep it's being defined with let");
-              environment let_env(env);
-              subexprs let_bindings = std::get<subexprs>(s.at(1).value());
-              for(auto& binding: let_bindings){
-                subexprs binding_args = std::get<subexprs>(binding.value());
-                symbol var = std::get<symbol>(binding_args.at(0).value());
-                let_env.set(var, tru_eval(binding_args.at(1), env));
+                  // SPECIAL FORMS
+                  // Defining new variables
+                  if (element == "define"){ // (define <symbol> <symbolic-expression>)
+                    DBG("Defining new binding");
+                    symbol symbol_to_bind = std::get<symbol>(sub_expressions.at(1).value());
+                    env.set(symbol_to_bind, tru_eval(sub_expressions.at(2), env));
+                    return sub_expressions.at(2).value();
+                  }
+
+                // Let blocks
+                if (element == "let"){  // (let (<let-bindings>+) <symbolic-expression>)
+                  DBG("Creating a new let block");
+                  environment let_env(env);
+                  subexprs let_bindings = std::get<subexprs>(sub_expressions.at(1).value());
+                  for(auto& binding: let_bindings){
+                    subexprs binding_args = std::get<subexprs>(binding.value());
+                    symbol var = std::get<symbol>(binding_args.at(0).value());
+                    let_env.set(var, tru_eval(binding_args.at(1), env));
+                  }
+                  return tru_eval(sub_expressions.at(2), let_env);
+                }
+
+                // Quoting
+                if (element == "quote"){ // (quote <symbolic-expression>)
+                  DBG("Quoted this ");
+                  return sexpr(quoted<expression>{ std::make_shared<expression>(sub_expressions.at(1)) });
+                }
+
+                // Closures
+                if (element == "lambda"){ // (lambda <lambda-list> <forms>+)
+                  return create_lambda(sub_expressions, env);
+                };
+
+                // BASIC EXPRESSIONS
+                auto expressions = std::get<subexprs>(eval_subexpressions(expr, env));
+                auto func = std::get<lisp_function>(expressions.front().value());
+                DBG("Function was found for " << pr_str(expressions.front().value()));
+                DBG("executing functoin now");
+                return func(std::vector(expressions.begin()+1, expressions.end())).value();
+
+              },
+              [](auto anything_else [[gnu::unused]]) -> sexpr {
+                throw std::runtime_error("failed to properly evaluate this expression ");
               }
-              return tru_eval(s.at(2), let_env);
-            }
-            // Quoting
-            if (*e == "quote"){
-              DBG("Quoted this ");
-              return s.at(1).value();
-            }
-            // BASIC EXPRESSIONS
-            auto expressions = std::get<subexprs>(eval_subexpressions(expr, env));
-            auto func = std::get<lisp_function>(expressions.front().value());
-            DBG("Function was found for " << pr_str(expressions.front().value()));
-            DBG("executing functoin now");
-            return func(std::vector(expressions.begin()+1, expressions.end())).value();
-          }
-          throw std::runtime_error("failed to properly evaluate this expression ");
+              },
+            sub_expressions.front().value());
         },
-        [&expr, &env](auto& s [[gnu::unused]]) -> sexpr {
+        [&expr, &env](auto& anything_else [[gnu::unused]]) -> sexpr {
           return eval_subexpressions(expr, env);
         }
         }, expr.value()));
