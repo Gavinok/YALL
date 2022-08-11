@@ -183,3 +183,133 @@ TEST_CASE("Check simple 3 arg if statments false"){
   auto tmp = std::get<int>(tru_eval(e, ev));
   CHECK(tmp == 5);
 }
+
+TEST_CASE("Check basic lambda example no args"){
+  environment ev;
+  auto e = read_string("(lambda () 1)");
+  auto tmp = std::get<expression::lisp_function>(tru_eval(e, ev));
+  environment::args a;
+  DBG("evaled thing " +pr_str(tmp(a).value()));
+  CHECK(pr_str(tmp(a).value()) == "1");
+}
+
+TEST_CASE("Check basic lambda example args"){
+  environment ev;
+  auto e = read_string("(lambda () 1)");
+  auto tmp = std::get<expression::lisp_function>(tru_eval(e, ev));
+  environment::args a;
+  DBG(pr_str(tmp(a).value()));
+  CHECK(std::get<int>(tmp(a).value()) == 1);
+}
+
+TEST_CASE("Check basic lambda example args and uses it"){
+  environment ev;
+  auto e = read_string("(lambda (x) x)");
+  auto tmp = std::get<expression::lisp_function>(tru_eval(e, ev));
+  environment::args a{expression(2)};
+  CHECK(pr_str(tmp(a).value()) == "2");
+}
+
+TEST_CASE("Check basic lambda example args and uses it in expression"){
+  environment ev;
+  auto e = read_string("(lambda (x) (+ 1 x))");
+  auto tmp = std::get<expression::lisp_function>(tru_eval(e, ev));
+  environment::args a{expression(1)};
+  CHECK(pr_str(tmp(a).value()) == "2");
+}
+
+TEST_CASE("Check lambda in a let"){
+  environment ev;
+  auto e = read_string("(let ((q 20)) (lambda (x) (+ q x)))");
+  auto tmp = std::get<expression::lisp_function>(tru_eval(e, ev));
+  environment::args a{expression(1)};
+  CHECK(pr_str(tmp(a).value()) == "21");
+}
+
+TEST_CASE("Check if statment"){
+  auto e = read_string("(if (= 1 1) #f #t)");
+  environment env;
+  CHECK(pr_str(tru_eval(e, env)) == "#f");
+}
+
+TEST_CASE("Check nested quoting"){
+  auto e = read_string("(define x (if (= 1 1) (quote a)))");
+  environment env;
+  pr_str(tru_eval(e, env));
+  e = read_string("x");
+  CHECK(pr_str(tru_eval(e, env)) == "a");
+}
+
+TEST_CASE("Check nested quoting in lambda"){
+  auto e = read_string("(define x (lambda () (if (= 1 1) (quote a))))");
+  environment env;
+  pr_str(tru_eval(e, env));
+  e = read_string("(x)");
+  CHECK(pr_str(tru_eval(e, env)) == "a");
+}
+
+TEST_CASE("Check nested quoting in lambda double def"){
+  environment env;
+  auto e = read_string("(define not (lambda (condition) (if condition #f #t)))");
+  pr_str(tru_eval(e, env));
+  e = read_string("(define unless (lambda (condition expression) (if (not condition) expression)))");
+  pr_str(tru_eval(e, env));
+  e = read_string("(unless #f (quote (print this)))");
+  CHECK(pr_str(tru_eval(e, env)) == "(print this)");
+}
+
+TEST_CASE("Check let inside definition with lambda"){
+  environment env;
+  auto e = read_string(R"((define doubleAndInc
+                             (let ((double (lambda (x) (* 2 x))))
+                                    (lambda (q)
+                                            (+ 1 (double q))))))");
+  tru_eval(e, env);
+  e = read_string(R"((doubleAndInc 200))");
+  CHECK(pr_str(tru_eval(e, env)) == "401");
+}
+
+TEST_CASE("Check proposal nested let"){
+  environment env;
+  auto e = read_string(R"((let ((x 1)
+                         (y 9))
+                      (let ((x 5))
+                         (+ x y))))");
+  CHECK(pr_str(tru_eval(e, env)) == "14");
+}
+
+TEST_CASE("Check proposal let with lambda"){
+  environment env;
+  auto e = read_string(R"((define x (let ((x 1))
+                      (lambda (y)
+                         (+ x y)))))");
+  pr_str(tru_eval(e, env));
+   e = read_string(R"((x 2))");
+   CHECK(pr_str(tru_eval(e, env)) == "3");
+}
+
+TEST_CASE("Check direct call to lambda"){
+  environment env;
+  auto e = read_string(R"(((lambda ()
+                              (+ 1 2))))");
+   CHECK(pr_str(tru_eval(e, env)) == "3");
+}
+
+TEST_CASE("Check direct call to lambda with argument"){
+  environment env;
+  auto e = read_string(R"(((lambda (x)
+                              (+ 1 x)) 2))");
+   CHECK(pr_str(tru_eval(e, env)) == "3");
+}
+
+TEST_CASE("Check car"){
+  environment env;
+  auto e = read_string(R"((car (quote (1 2 3))))");
+  CHECK(pr_str(tru_eval(e, env)) == "1");
+}
+
+TEST_CASE("Check cdr"){
+  environment env;
+  auto e = read_string(R"((cdr (quote (1 2 3))))");
+  CHECK(pr_str(tru_eval(e, env)) == "(2 3)");
+}
