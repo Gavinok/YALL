@@ -1,0 +1,7 @@
+name "Gavin Jaeger-Freeborn"
+student_id "V00849637"
+email "gavinfre@uvic.ca"
+course "SENG475"
+section "T01"
+term "2022-05"
+assignment "cpp_project"
