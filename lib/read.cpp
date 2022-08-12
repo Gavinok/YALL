@@ -202,12 +202,14 @@ std::string pr_str(sexpr s, std::string accum) {
   };
 
   // TODO this should not be necessary to call std::to_string
-  auto numbers_to_string = [](int& x)                 -> str { return std::to_string(x); };
-  auto symbol_to_string  = [](symbol& x)              -> str { return x; };
-  auto func_to_string    = [](fn& x [[gnu::unused]])  -> str { return "#<YALL Function>"; };
-  auto boolean_to_string = [](boolean& true_or_false) -> str {
-    return true_or_false.value ? "#t" : "#f";
-  };
+  auto numbers_to_string =
+    [](int& x)                 -> str { return std::to_string(x); };
+  auto symbol_to_string  =
+    [](symbol& x)              -> str { return x; };
+  auto func_to_string    =
+    [](fn& x [[gnu::unused]])  -> str { return "#<YALL Function>"; };
+  auto boolean_to_string =
+    [](boolean& true_or_false) -> str { return true_or_false.value ? "#t" : "#f";};
   return std::visit(overloaded
                     {
                       subexpr_to_string,

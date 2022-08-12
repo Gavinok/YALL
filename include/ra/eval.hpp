@@ -29,28 +29,25 @@ private:
   // XXX This use of a raw pointer should be replaced with something easier to manage
   // std::list<std::shared_ptr<std::map<symbol, sexpr>>> outer_scopes;
   // Default environment bindings
-  std::map<symbol, sexpr> bindings{
-    {"+" , [](args operands) -> sexpr {
-      return std::get<int>(operands[0].value()) + std::get<int>(operands[1].value());
+  std::map<symbol, sexpr> bindings = std::map<symbol, sexpr>{
+    {"+" , [](args operands, args_size size) -> sexpr {
+      validate_argument_count(2, size);
+      return resolve_to<int>(operands->value()) + resolve_to<int>((++operands)->value());
     }},
-    {"-" , [](args operands) -> sexpr{
-      return sexpr(std::get<int>(operands[0].value()) - std::get<int>(operands[1].value()));
+    {"-" , [](args operands, args_size size) -> sexpr {
+      validate_argument_count(2, size);
+      return resolve_to<int>(operands->value()) - resolve_to<int>((++operands)->value());
     }},
-    {"*" , [](args operands) -> sexpr {
-      return sexpr(std::get<int>(operands[0].value()) * std::get<int>(operands[1].value()));
+    {"*" , [](args operands, args_size size) -> sexpr {
+      validate_argument_count(2, size);
+      return resolve_to<int>(operands->value()) * resolve_to<int>((++operands)->value());
     }},
-    {"=" , [](args operands) -> sexpr {
-      return sexpr(
-                   boolean{
-                     std::get<int>(operands[0].value()) == std::get<int>(operands[1].value())
-                     }
-                   );
+    {"=" , [](args operands, args_size size) -> sexpr {
+      validate_argument_count(2, size);
+      return boolean{
+                resolve_to<int>(operands->value()) == resolve_to<int>((++operands)->value())
+              };
     }},
-    {"if" , [](args operands) -> sexpr {
-      auto condition = std::get<boolean>(operands[0].value());
-      if (condition.value)
-        return operands[1].value();
-      else
 
         if (operands.size() == 3)
           return operands[2].value();
