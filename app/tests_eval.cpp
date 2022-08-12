@@ -459,68 +459,226 @@ TEST_CASE("Check proposal nested let"){
   CHECK(pr_str(tru_eval(e, env)) == "14");
 }
 
-TEST_CASE("Check nested quoting in lambda double def"){
-  environment env;
-  auto e = read_string("(define not (lambda (condition) (if condition #f #t)))");
-  pr_str(tru_eval(e, env));
-  e = read_string("(define unless (lambda (condition expression) (if (not condition) expression)))");
-  pr_str(tru_eval(e, env));
-  e = read_string("(unless #f (quote (print this)))");
-  CHECK(pr_str(tru_eval(e, env)) == "(print this)");
-}
-
-TEST_CASE("Check let inside definition with lambda"){
-  environment env;
-  auto e = read_string(R"((define doubleAndInc
-                             (let ((double (lambda (x) (* 2 x))))
-                                    (lambda (q)
-                                            (+ 1 (double q))))))");
-  tru_eval(e, env);
-  e = read_string(R"((doubleAndInc 200))");
-  CHECK(pr_str(tru_eval(e, env)) == "401");
-}
-
-TEST_CASE("Check proposal nested let"){
-  environment env;
-  auto e = read_string(R"((let ((x 1)
-                         (y 9))
-                      (let ((x 5))
-                         (+ x y))))");
-  CHECK(pr_str(tru_eval(e, env)) == "14");
-}
-
-TEST_CASE("Check proposal let with lambda"){
-  environment env;
-  auto e = read_string(R"((define x (let ((x 1))
-                      (lambda (y)
-                         (+ x y)))))");
-  pr_str(tru_eval(e, env));
-   e = read_string(R"((x 2))");
-   CHECK(pr_str(tru_eval(e, env)) == "3");
-}
-
-TEST_CASE("Check direct call to lambda"){
-  environment env;
-  auto e = read_string(R"(((lambda ()
-                              (+ 1 2))))");
-   CHECK(pr_str(tru_eval(e, env)) == "3");
-}
-
-TEST_CASE("Check direct call to lambda with argument"){
-  environment env;
-  auto e = read_string(R"(((lambda (x)
-                              (+ 1 x)) 2))");
-   CHECK(pr_str(tru_eval(e, env)) == "3");
-}
-
 TEST_CASE("Check car"){
   environment env;
   auto e = read_string(R"((car (quote (1 2 3))))");
   CHECK(pr_str(tru_eval(e, env)) == "1");
 }
 
+// TODO Causes a buffer overflow
+// TEST_CASE("Check car empty list"){
+//   environment env;
+//   auto e = read_string(R"((car (quote ())))");
+//   CHECK_THROWS(pr_str(tru_eval(e, env)) == "1");
+// }
+
 TEST_CASE("Check cdr"){
   environment env;
   auto e = read_string(R"((cdr (quote (1 2 3))))");
   CHECK(pr_str(tru_eval(e, env)) == "(2 3)");
+}
+
+TEST_CASE("Check cdr on single element list"){
+  environment env;
+  auto e = read_string(R"((cdr (quote (1))))");
+  CHECK(pr_str(tru_eval(e, env)) == "()");
+}
+
+TEST_CASE("Check cdr empty list"){
+  environment env;
+  auto e = read_string(R"((cdr (quote ())))");
+  CHECK_THROWS(pr_str(tru_eval(e, env)) == "()");
+}
+
+TEST_CASE("Check Append"){
+  SECTION("Append with empty list"){
+    environment env;
+    auto e = read_string(R"((append (quote ()) 2))");
+    CHECK(pr_str(tru_eval(e, env)) == "(2)");
+  }
+  SECTION("Append it is"){
+    environment env;
+    auto e = read_string(R"((append (list 1) 2))");
+    CHECK(pr_str(tru_eval(e, env)) == "(1 2)");
+  }
+  SECTION("Append it is long"){
+    environment env;
+    auto e = read_string(R"((append (quote (1 1)) 2))");
+    CHECK(pr_str(tru_eval(e, env)) == "(1 1 2)");
+  }
+  SECTION("Append 2 lists"){
+    environment env;
+    auto e = read_string(R"((append (quote (1 1)) (list 2)))");
+    CHECK(pr_str(tru_eval(e, env)) == "(1 1 2)");
+  }
+  SECTION("Append 2 long lists"){
+    environment env;
+    auto e = read_string(R"((append (quote (1 2 1)) (list 10  2)))");
+    CHECK(pr_str(tru_eval(e, env)) == "(1 2 1 10 2)");
+  }
+}
+TEST_CASE("Check Cons"){
+  SECTION("Cons element into list"){
+    environment env;
+    auto e = read_string(R"((cons 1 (list 2)))");
+    CHECK(pr_str(tru_eval(e, env)) == "(1 2)");
+  }
+  SECTION("Cons element into longer list"){
+    environment env;
+    auto e = read_string(R"((cons 1 (list 2 3)))");
+    CHECK(pr_str(tru_eval(e, env)) == "(1 2 3)");
+  }
+  SECTION("Cons element into longer nested list"){
+    environment env;
+    auto e = read_string(R"((cons (list 1) (list 2 3)))");
+    CHECK(pr_str(tru_eval(e, env)) == "((1) 2 3)");
+  }
+}
+TEST_CASE("Check Conse"){
+  SECTION("Basic cons"){
+    environment env;
+    auto e = read_string(R"((cons 1 2))");
+    CHECK(pr_str(tru_eval(e, env)) == "(1 2)");
+  }
+}
+
+// TEST_CASE("Check map"){
+//   SECTION("Base case"){
+//     environment env;
+//     auto e = read_string(R"((map (lambda (a) (+ 1 a)) (quote (1 2 3))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "(2 3 4)");
+//   }
+//   SECTION("Check map with cons"){
+//     environment env;
+//     auto e = read_string(R"((map (lambda (a) (cons 1 a)) (quote (1 2 3))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "((1 1) (1 2) (1 3))");
+//   }
+//   SECTION("Check map with bool"){
+//     environment env;
+//     auto e = read_string(R"((map (lambda (a) (= 1 a)) (quote (1 2 3))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "(#t #f #f)");
+//   }
+//   SECTION("Check map missing arg"){
+//     environment env;
+//     auto e = read_string(R"((map (lambda (a) (= 1 a))))");
+//     CHECK_THROWS(pr_str(tru_eval(e, env)));
+//   }
+//   SECTION("Check map call with non list"){
+//     environment env;
+//     auto e = read_string(R"((let ((addOne (lambda (a) (+ 1 a))))
+//                                    (map addOne 3)))");
+//     CHECK_THROWS(pr_str(tru_eval(e, env)) == "(2 3 4)");
+//   }
+//   SECTION("Check map call with non function"){
+//     environment env;
+//     auto e = read_string(R"((let ((addOne (lambda (a) (+ 1 a))))
+//                                    (map (quote a) (quote (1 2 3)))))");
+//     CHECK_THROWS(pr_str(tru_eval(e, env)));
+//   }
+//   SECTION("Check map call from outer scope"){
+//     environment env;
+//     auto e = read_string(R"((let ((addOne (lambda (a) (+ 1 a))))
+//                                    (map addOne (quote (1 2 3)))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "(2 3 4)");
+//   }
+// }
+
+// TEST_CASE("Check filter"){
+//   SECTION("Base case"){
+//     environment env;
+//     auto e = read_string(R"((filter (lambda (a) (= 1 a)) (quote (1 2 3))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "(1)");
+//   }
+//   SECTION("Check filter using outerscope"){
+//     environment env;
+//     auto e = read_string(R"((car (let ((eqToOne (lambda (a) (= 1 a))))
+//                              (filter eqToOne (quote (1 2 3))))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "1");
+//   }
+//   SECTION("Check filter but doesn't return a bool"){
+//     environment env;
+//     auto e = read_string(R"((car (let ((eqToOne (lambda (a) (+ 1 a))))
+//                              (filter eqToOne (quote (1 2 3))))))");
+//     CHECK_THROWS(pr_str(tru_eval(e, env)));
+//   }
+//   SECTION("Check filter symbols"){
+//     environment env;
+//     auto e = read_string(R"((filter (lambda (a) (eq a (quote b))) (quote (b 2 b))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "(b b)");
+//   }
+// }
+
+// TEST_CASE("Check Foldl"){
+//   SECTION("Check foldl to sum"){
+//     environment env;
+//     auto e = read_string(R"((foldl (lambda (a b) (+ a b)) 0 (quote (1 2 3))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "6");
+//   }
+//   SECTION("Check foldl for any"){
+//     environment env;
+//     auto e = read_string(R"((define or (lambda (a b) (if a #t (if b #t #f)))))");
+//     tru_eval(e, env);
+//     e = read_string(R"((define any (lambda (lst)
+//               (foldl or #f lst))))");
+//     tru_eval(e, env);
+//     e = read_string(R"((any (quote (#f #t #f))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "#t");
+//     e = read_string(R"((any (quote (#f #f #f))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "#f");
+//   }
+//   // Maybe don't even support lists
+//   // SECTION("Check foldl for cons "){
+//   //   environment env;
+//   //   auto e = read_string(R"((foldl cons (quote ()) (quote (#f #f #f))))");
+//   //   CHECK(pr_str(tru_eval(e, env)) == "(#f)");
+//   // }
+
+//   // TODO don't even support lists
+//   SECTION("Check foldl for append "){
+//     environment env;
+//     auto e = read_string(R"((foldl append (quote ()) (quote (#f #f #f))))");
+//     CHECK(pr_str(tru_eval(e, env)) == "(#f)");
+//   }
+// }
+
+TEST_CASE("Check base list "){
+  environment env;
+  auto e = read_string(R"((list 1 2 3))");
+  CHECK(pr_str(tru_eval(e, env)) == "(1 2 3)");
+}
+TEST_CASE("Check raw empty parens"){
+  environment env;
+  auto e = read_string(R"(())");
+  CHECK_THROWS(pr_str(tru_eval(e, env)));
+}
+TEST_CASE("Check base list empty"){
+  environment env;
+  auto e = read_string(R"((list))");
+  CHECK_THROWS(pr_str(tru_eval(e, env)));
+}
+TEST_CASE("Check negative numbers numbers"){
+  environment env;
+  auto e = read_string(R"((+ (quote -1 ) (quote 2)))");
+  CHECK_THROWS(pr_str(tru_eval(e, env)) == "3");
+}
+
+// XXX Eval isn't working properly (can't look up properly)
+TEST_CASE("Check complex example"){
+  environment env;
+  auto e = read_string(R"((define or (lambda (a b) (if a #t (if b #t #f)))))");
+  tru_eval(e, env);
+  e = read_string(R"((define inc (lambda (a) (+ 1 a))))");
+  tru_eval(e, env);
+  e = read_string(R"((define eqTwoOrThree (lambda (a) (or (= 2 a) (= 3 a)))))");
+  tru_eval(e, env);
+  e = read_string(R"((define foldThingsIG (lambda (q)
+                       (list (foldl (lambda (x y) (- x y)) 0
+                                    (filter eqTwoOrThree (map inc q)))
+                             2
+                             (quote a)))))");
+  tru_eval(e, env);
+  e = read_string(R"((let ((tmp (foldThingsIG (list 1 2 3 4 5 6 7 8 9 10))))
+                                 (+ (eval (car tmp))
+                                    (eval (car (cdr tmp))))))");
+  CHECK(pr_str(tru_eval(e, env)) == "-3");
 }
