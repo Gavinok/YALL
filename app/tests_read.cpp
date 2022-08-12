@@ -111,7 +111,7 @@ TEST_CASE("Check read_form with sub lists", "[constructor]") {
   subexprs e = std::get<subexprs>(read_form(r));
 
   CHECK(e.size() == 3);
-  CHECK(std::get<subexprs>(e.at(1).value()).size() == 2);
+  CHECK(std::get<subexprs>((++e.begin())->value()).size() == 2);
 
   auto expected = std::vector<int>{1, 2, 3, 4};
   auto valiter = expected.begin();
@@ -144,7 +144,7 @@ TEST_CASE("Check read_form recognize symbols", "[constructor]") {
   auto expected = std::vector<std::variant<int, symbol>>{"hello", "there", 3, 4};
   auto valiter = expected.begin();
   CHECK(e.size() == 3);
-  CHECK(std::get<subexprs>(e.at(1).value()).size() == 2);
+  CHECK(std::get<subexprs>((++e.begin())->value()).size() == 2);
   for(auto i = e.begin(); i != e.end(); i++){
     std::function<void(expression)> checker;
     checker = [&checker, &valiter](expression x) {
@@ -177,7 +177,7 @@ TEST_CASE("Check read_form recognize booleans", "[constructor]") {
   auto expected = std::vector<std::variant<int, symbol, boolean>>{"hello", boolean{false}, boolean{false}, boolean{true}};
 
   CHECK(e.size() == 3);
-  CHECK(std::get<subexprs>(e.at(1).value()).size() == 2);
+  CHECK(std::get<subexprs>((++e.begin())->value()).size() == 2);
 
   auto valiter = expected.begin();
   for(auto i = e.begin(); i != e.end(); i++){
@@ -214,7 +214,7 @@ TEST_CASE("Check read_form ignore comments", "[constructor]") {
   subexprs e = std::get<subexprs>(read_form(r));
   std::vector<std::variant<int, symbol, boolean>>expected{1, 2, 3, 4};
   CHECK(e.size() == 3);
-  CHECK(std::get<subexprs>(e.at(1).value()).size() == 2);
+  CHECK(std::get<subexprs>((++e.begin())->value()).size() == 2);
   auto valiter = expected.begin();
   for(auto i = e.begin(); i != e.end(); i++){
     std::function<void(expression)> checker;
@@ -259,14 +259,14 @@ TEST_CASE("Check read from stream multiline with comment in form "){
   std::istringstream in("(1 ; hello\n2)");
   auto e = READ(in);
   CHECK(pr_str(std::get<expression::subexprs>(e->value()).front().value()) == "1");
-  CHECK(pr_str(std::get<expression::subexprs>(e->value()).at(1).value()) == "2");
+  CHECK(pr_str((++std::get<expression::subexprs>(e->value()).begin())->value()) == "2");
 }
 
 TEST_CASE("Check read from stream multiline with comment after form"){
   std::istringstream in("(1 \n2) ; hello");
   auto e = READ(in);
   CHECK(pr_str(std::get<expression::subexprs>(e->value()).front().value()) == "1");
-  CHECK(pr_str(std::get<expression::subexprs>(e->value()).at(1).value()) == "2");
+  CHECK(pr_str((++std::get<expression::subexprs>(e->value()).begin())->value()) == "2");
 }
 
 TEST_CASE("Check read on unclosed paren", "[constructor]") {
@@ -325,7 +325,6 @@ TEST_CASE("Check read_form handle built in symbols", "[constructor]") {
   subexprs e = std::get<subexprs>(read_form(r));
   std::vector<std::variant<int, symbol, boolean>> expected{"-", "*", "=", "+", 3, 4};
   CHECK(e.size() == 5);
-  CHECK(std::get<subexprs>(e.at(3).value()).size() == 2);
   auto valiter = expected.begin();
   for(auto i = e.begin(); i != e.end(); i++){
     std::function<void(expression)> checker;
