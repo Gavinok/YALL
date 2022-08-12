@@ -4,23 +4,19 @@ using subexprs = expression::subexprs;
 using lisp_function = expression::lisp_function;
 using sexpr = expression::sexpr;
 
-// sexpr& environment::get(symbol s){
-//   DBG("Looking up binding for " + pr_str(s));
-//   return bindings.at(s);
-// }
 sexpr& environment::get(symbol s){
-  try {
-    return bindings.at(s);
-  } catch (...){
-    // TODO catch the exact exception when the binding can not be resolved
-    if (outer_scopes)
-      return outer_scopes->get(s);
-  }
   DBG("Looking up binding for " + pr_str(s));
-  throw std::runtime_error("Could not resolve binding for " + pr_str(s));
+  try {
+  return bindings.at(s);
+  } catch (...){
+  //   if (outer_scopes)
+  //     outer_scopes->get(s);
+    throw std::runtime_error("Could not resolve binding for " + pr_str(s));
+  }
 }
+
 sexpr& environment::set(symbol s, sexpr expr){
-  DBG("Defining binding for up binding for " + pr_str(s));
+  DBG("Defining binding for  " + pr_str(s));
   return bindings[s] = expr;
 };
 
