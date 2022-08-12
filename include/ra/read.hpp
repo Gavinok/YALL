@@ -13,7 +13,8 @@
 #include <ostream>
 #include <sstream>
 #include <string>
-#include <vector>
+// #include <vector>
+#include <list>
 #include <variant>
 #include <memory>
 #include <optional>
@@ -41,8 +42,8 @@ struct quoted {
 
 class expression {
 public:
-  using subexprs = std::vector<expression>;
-  using lisp_function = std::function<expression(std::vector<expression>)>;
+  using subexprs = std::list<expression>;
+  using lisp_function = std::function<expression(subexprs::iterator, size_t)>;
   using sexpr = std::variant< symbol, quoted<expression>, lisp_function, subexprs, int, boolean >;
   expression(sexpr s);
   expression(expression& e) = default;

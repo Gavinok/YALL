@@ -20,16 +20,26 @@ sexpr& environment::set(symbol s, sexpr expr){
   return bindings[s] = expr;
 };
 
-sexpr create_lambda(subexprs& sub_expressions, environment& env){
+void validate_argument_count(size_t expected, size_t given){
+  if(given != expected)
+    throw std::runtime_error("Expected " + std::to_string(expected) + " arguments"
+                             "but got " + std::to_string(given));
+
+}
+
+sexpr create_lambda(subexprs sub_expressions, environment env){
+  using args = environment::args;
+  using args_size = environment::args_size;
   DBG("It's a lambda definition");
 
-  auto arg_symbols = std::get<subexprs>(sub_expressions.at(1).value());
-  auto body = sub_expressions.at(2);
+  auto lambda_iter = ++(sub_expressions.begin());
+  auto arg_symbols = std::get<subexprs>(lambda_iter->value());
+  auto body = *(++(lambda_iter));
 
   DBG("Constructing Lambda");
 
   // TODO passing by value is gonna be a bottleneck
-  auto lambda = [env, body, arg_symbols](environment::args lambda_args) -> sexpr {
+  auto lambda = [env, body, arg_symbols](args lambda_args, args_size size) -> sexpr {
     environment lambda_env(env);
 
     DBG("Getting lambda list");
@@ -39,13 +49,10 @@ sexpr create_lambda(subexprs& sub_expressions, environment& env){
     auto expr = body;
 
     // Ensure proper number of arguments are passed
-    if (arg_symbols.size() != lambda_args.size())
-      throw std::runtime_error ("Wrong number of arguments passed. Expected "
-                                + std::to_string(lambda_args.size()));
-
+    validate_argument_count(arg_symbols.size(), size);
     // Bind arguments to the current environment
-    for (auto sym = arg_expers.begin(), arg = lambda_args.begin();
-         arg != lambda_args.end() && sym != arg_expers.end();
+    for (auto sym = arg_expers.begin(), arg = lambda_args;
+         sym != arg_expers.end();
          ++sym, ++arg) {
 
       DBG("lambda list determining argument symbols");
@@ -73,45 +80,61 @@ sexpr& tru_eval(expression& expr, environment& env){
           if(sub_expressions.size() == 0) return sub_expressions;
           DBG("Checking the first of the expressions" + pr_str(sub_expressions.front().value()));
 
+          subexprs::iterator expr_iter = sub_expressions.begin();
           return std::visit(overloaded{
-              [&env, &sub_expressions](subexprs nested_function_call [[gnu::unused]]) -> sexpr {
+              [&env, &sub_expressions, &expr_iter](subexprs nested_fn_call [[gnu::unused]]) -> sexpr {
                 DBG("determined to be yet another expression there for it's a nested function call");
-                auto func = std::get<lisp_function>(tru_eval(sub_expressions.front(), env));
-                return func(std::vector(sub_expressions.begin()+1, sub_expressions.end())).value();
+                auto func = std::get<lisp_function>(tru_eval(*expr_iter, env));
+                return func(++(expr_iter), sub_expressions.size()-1).value();
               },
-              [&env, &sub_expressions, &expr](symbol element) -> sexpr {
+              [&env, &sub_expressions, &expr, &expr_iter](symbol element) -> sexpr {
                 DBG("First arg was a symbol")
 
                   // SPECIAL FORMS
                   // Defining new variables
                   if (element == "define"){ // (define <symbol> <symbolic-expression>)
                     DBG("Defining new binding");
-                    symbol symbol_to_bind = std::get<symbol>(sub_expressions.at(1).value());
-                    env.set(symbol_to_bind, tru_eval(sub_expressions.at(2), env));
-                    return sub_expressions.at(2).value();
+                    validate_argument_count(2 , sub_expressions.size()-1);
+                    auto fst = ++expr_iter;
+                    auto snd = ++expr_iter;
+
+                    symbol symbol_to_bind = std::get<symbol>(fst->value());
+                    env.set(symbol_to_bind, tru_eval(*snd, env));
+                    return snd->value();
                   }
 
                 // Let blocks
                 if (element == "let"){  // (let (<let-bindings>+) <symbolic-expression>)
                   DBG("Creating a new let block");
+                  validate_argument_count(2 , sub_expressions.size()-1);
+                  auto fst = ++expr_iter;
+                  auto snd = ++expr_iter;
+
+                  // TODO Create new environment for the let block that can fall back to the upper scope
                   environment let_env(env);
-                  subexprs let_bindings = std::get<subexprs>(sub_expressions.at(1).value());
+                  subexprs let_bindings = std::get<subexprs>(fst->value());
+                  DBG("getting sub expressions")
                   for(auto& binding: let_bindings){
                     subexprs binding_args = std::get<subexprs>(binding.value());
-                    symbol var = std::get<symbol>(binding_args.at(0).value());
-                    let_env.set(var, tru_eval(binding_args.at(1), env));
+                    validate_argument_count(2 , binding_args.size());
+                    auto key = binding_args.begin();
+                    auto value = ++(binding_args.begin());
+                    symbol var = std::get<symbol>(key->value());
+                    let_env.set(var, tru_eval(*value, env));
                   }
-                  return tru_eval(sub_expressions.at(2), let_env);
+                  return tru_eval(*snd, let_env);
                 }
 
                 // Quoting
                 if (element == "quote"){ // (quote <symbolic-expression>)
+                  validate_argument_count(1 , sub_expressions.size()-1);
                   DBG("Quoted this ");
-                  return sexpr(quoted<expression>{ std::make_shared<expression>(sub_expressions.at(1)) });
+                  return sexpr(quoted<expression>{ std::make_shared<expression>(*(++expr_iter)) });
                 }
 
                 // Closures
                 if (element == "lambda"){ // (lambda <lambda-list> <forms>+)
+                  validate_argument_count(2 , sub_expressions.size()-1);
                   return create_lambda(sub_expressions, env);
                 };
 
@@ -120,14 +143,14 @@ sexpr& tru_eval(expression& expr, environment& env){
                 auto func = std::get<lisp_function>(expressions.front().value());
                 DBG("Function was found for " << pr_str(expressions.front().value()));
                 DBG("executing functoin now");
-                return func(std::vector(expressions.begin()+1, expressions.end())).value();
+                return func(++(expressions.begin()), expressions.size() - 1).value();
 
               },
               [](auto anything_else [[gnu::unused]]) -> sexpr {
                 throw std::runtime_error("failed to properly evaluate this expression ");
               }
               },
-            sub_expressions.front().value());
+            expr_iter->value());
         },
         [&expr, &env](auto& anything_else [[gnu::unused]]) -> sexpr {
           return eval_subexpressions(expr, env);

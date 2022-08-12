@@ -9,7 +9,8 @@ class environment {
 public:
   using sexpr = expression::sexpr;
   using subexprs = expression::subexprs;
-  using args = std::vector<expression>;
+  using args = subexprs::iterator;
+  using args_size = size_t;
   // TODO map of symbols?
   environment(){}
   // XXX This use of a raw pointer should be replaced with something easier to manage

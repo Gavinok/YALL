@@ -87,9 +87,10 @@ token Reader::next(){
   return tmp;
 };
 sexpr read_list(Reader& r){
+  using subexprs = expression::subexprs;
   r.next();
   DBG("value stored in list " << r.peak());
-  std::vector<expression> exprs;
+  subexprs exprs;
   while(r.peak() != ")"){
     exprs.push_back(read_form(r));
   }
@@ -158,9 +159,7 @@ sexpr read_atom(Reader& r){
 void skip_comment(Reader& r) {
   if (r.peak() == ";"){
     DBG("Comment found " << r.peak());
-    while (r.next() != "\n")
-      std::cout << "skipping comment" << std::endl;
-    std::cout << "comment skipped" << std::endl;
+    while (r.next() != "\n");
   }
   r.peak();
 }
