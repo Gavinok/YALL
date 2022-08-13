@@ -1,15 +1,15 @@
 #define CATCH_CONFIG_MAIN
-#include <iostream>
-#include <vector>
+#include "ra/read.hpp"
 #include <catch2/catch.hpp>
 #include <functional>
+#include <iostream>
 #include <string>
-#include "ra/read.hpp"
+#include <vector>
 
 using subexprs = expression::subexprs;
 
-TEST_CASE("Check tokenizer"){
-  SECTION("single list"){
+TEST_CASE("Check tokenizer") {
+  SECTION("single list") {
     auto t = tokenizer("(hello world)");
     CHECK(t[0] == "(");
     CHECK(t[1] == "hello");
@@ -17,7 +17,7 @@ TEST_CASE("Check tokenizer"){
     CHECK(t[3] == ")");
   }
 
-  SECTION("Check tokenizer nested lists"){
+  SECTION("Check tokenizer nested lists") {
     auto t = tokenizer("(hello (hello world))");
     CHECK(t[0] == "(");
     CHECK(t[1] == "hello");
@@ -28,7 +28,7 @@ TEST_CASE("Check tokenizer"){
     CHECK(t[6] == ")");
   }
 
-  SECTION("Check Tokenizer to Reader"){
+  SECTION("Check Tokenizer to Reader") {
     auto t = tokenizer("(hello (hello world))");
     Reader r(t);
     CHECK(r.peak() == "(");
@@ -40,8 +40,8 @@ TEST_CASE("Check tokenizer"){
     CHECK(r.next() == "world");
   }
 }
-TEST_CASE("Check Reader"){
-  SECTION("Check Reader constructor"){
+TEST_CASE("Check Reader") {
+  SECTION("Check Reader constructor") {
     Reader r(std::vector<std::string>{"hello", "world"});
     CHECK(r.peak() == "hello");
     CHECK(r.next() == "hello");
@@ -49,7 +49,7 @@ TEST_CASE("Check Reader"){
     // TODO determine how we want to handle when there is nothing left to read
   }
 
-  SECTION("Check Tokenizer to Reader actual code"){
+  SECTION("Check Tokenizer to Reader actual code") {
     auto t = tokenizer("(- 30 (+ 1 2))");
     Reader r(t);
     CHECK(r.peak() == "(");
@@ -65,7 +65,7 @@ TEST_CASE("Check Reader"){
     CHECK(r.next() == ")");
   }
 
-  SECTION("Check comments"){
+  SECTION("Check comments") {
     auto t = tokenizer("(hello ) ; dont show this");
     Reader r(t);
     CHECK(r.next() == "(");
@@ -74,7 +74,7 @@ TEST_CASE("Check Reader"){
     CHECK(r.next() == ";");
   }
 
-  SECTION("Check all builtins"){
+  SECTION("Check all builtins") {
     auto t = tokenizer("+ - * ; = . () \n #f #t");
     Reader r(t);
     CHECK(r.next() == "+");
@@ -91,18 +91,18 @@ TEST_CASE("Check Reader"){
   }
 }
 
-TEST_CASE("Check read_form"){
-  SECTION("Check read_form with list of numbers"){
+TEST_CASE("Check read_form") {
+  SECTION("Check read_form with list of numbers") {
     Reader r(tokenizer("(1 2 3)"));
     try {
       subexprs e = std::get<subexprs>(read_form(r));
       auto expected = std::vector<int>{1, 2, 3};
-      subexprs::iterator  x = e.begin();
+      subexprs::iterator x = e.begin();
       std::vector<int>::iterator y = expected.begin();
-      for(; x != e.end(); x++, y++){
+      for (; x != e.end(); x++, y++) {
         CHECK(std::get<int>((*x).value()) == *y);
       }
-    } catch (const std::runtime_error& e) {
+    } catch (const std::runtime_error &e) {
       std::cout << e.what();
     }
   }
@@ -117,22 +117,20 @@ TEST_CASE("Check read_form"){
     auto expected = std::vector<int>{1, 2, 3, 4};
     auto valiter = expected.begin();
 
-    for(auto i = e.begin(); i != e.end(); i++){
+    for (auto i = e.begin(); i != e.end(); i++) {
       std::function<void(expression)> checker;
       checker = [&checker, &valiter](expression x) {
-        std::visit(overloaded{
-            [&checker](subexprs x){
-              for (auto v : x){
-                checker(v.value());
-              }},
-              [&valiter](int x){
-                CHECK(x == *valiter);
-                valiter++;
-              },
-              [](auto x [[gnu::unused]]){
-                FAIL();
-              }},
-          x.value());
+        std::visit(overloaded{[&checker](subexprs x) {
+                                for (auto v : x) {
+                                  checker(v.value());
+                                }
+                              },
+                              [&valiter](int x) {
+                                CHECK(x == *valiter);
+                                valiter++;
+                              },
+                              [](auto x [[gnu::unused]]) { FAIL(); }},
+                   x.value());
       };
       checker(i->value());
     }
@@ -141,30 +139,29 @@ TEST_CASE("Check read_form"){
   SECTION("recognize symbols", "[constructor]") {
     Reader r(tokenizer("(hello (there 3) 4)"));
     subexprs e = std::get<subexprs>(read_form(r));
-    auto expected = std::vector<std::variant<int, symbol>>{"hello", "there", 3, 4};
+    auto expected =
+        std::vector<std::variant<int, symbol>>{"hello", "there", 3, 4};
     auto valiter = expected.begin();
     CHECK(e.size() == 3);
     CHECK(std::get<subexprs>((++e.begin())->value()).size() == 2);
-    for(auto i = e.begin(); i != e.end(); i++){
+    for (auto i = e.begin(); i != e.end(); i++) {
       std::function<void(expression)> checker;
       checker = [&checker, &valiter](expression x) {
-        std::visit(overloaded{
-            [&checker](subexprs x){
-              for (auto v : x){
-                checker(v.value());
-              }},
-              [&valiter](int x){
-                CHECK(x == get<int>(*valiter));
-                valiter++;
-              },
-              [&valiter](symbol x){
-                CHECK(x == get<symbol>(*valiter));
-                valiter++;
-              },
-              [](auto x [[gnu::unused]]){
-                FAIL();
-              }},
-          x.value());
+        std::visit(overloaded{[&checker](subexprs x) {
+                                for (auto v : x) {
+                                  checker(v.value());
+                                }
+                              },
+                              [&valiter](int x) {
+                                CHECK(x == get<int>(*valiter));
+                                valiter++;
+                              },
+                              [&valiter](symbol x) {
+                                CHECK(x == get<symbol>(*valiter));
+                                valiter++;
+                              },
+                              [](auto x [[gnu::unused]]) { FAIL(); }},
+                   x.value());
       };
       checker(i->value());
     }
@@ -174,67 +171,64 @@ TEST_CASE("Check read_form"){
 
     Reader r(tokenizer("(hello (#f #f) #t)"));
     subexprs e = std::get<subexprs>(read_form(r));
-    auto expected = std::vector<std::variant<int, symbol, boolean>>{"hello", boolean{false}, boolean{false}, boolean{true}};
+    auto expected = std::vector<std::variant<int, symbol, boolean>>{
+        "hello", boolean{false}, boolean{false}, boolean{true}};
 
     CHECK(e.size() == 3);
     CHECK(std::get<subexprs>((++e.begin())->value()).size() == 2);
 
     auto valiter = expected.begin();
-    for(auto i = e.begin(); i != e.end(); i++){
+    for (auto i = e.begin(); i != e.end(); i++) {
       std::function<void(expression)> checker;
       checker = [&checker, &valiter](expression x) {
-        std::visit(overloaded{
-            [&checker](subexprs x){
-              for (auto v : x){
-                checker(v.value());
-              }},
-              [&valiter](int x){
-                CHECK(x == get<int>(*valiter));
-                valiter++;
-              },
-              [&valiter](symbol x){
-                CHECK(x == get<symbol>(*valiter));
-                valiter++;
-              },
-              [&valiter](boolean x){
-                CHECK(x.value == get<boolean>(*valiter).value);
-                valiter++;
-              },
-              [](auto x [[gnu::unused]]){
-                FAIL();
-              }},
-          x.value());
+        std::visit(overloaded{[&checker](subexprs x) {
+                                for (auto v : x) {
+                                  checker(v.value());
+                                }
+                              },
+                              [&valiter](int x) {
+                                CHECK(x == get<int>(*valiter));
+                                valiter++;
+                              },
+                              [&valiter](symbol x) {
+                                CHECK(x == get<symbol>(*valiter));
+                                valiter++;
+                              },
+                              [&valiter](boolean x) {
+                                CHECK(x.value == get<boolean>(*valiter).value);
+                                valiter++;
+                              },
+                              [](auto x [[gnu::unused]]) { FAIL(); }},
+                   x.value());
       };
       checker(i->value());
     }
   }
   SECTION("ignore comments", "[constructor]") {
-    Reader r(tokenizer("(1 (2 ;# thi )))\n 3) 4)"));    subexprs e = std::get<subexprs>(read_form(r));
-    std::vector<std::variant<int, symbol, boolean>>expected{1, 2, 3, 4};
+    Reader r(tokenizer("(1 (2 ;# thi )))\n 3) 4)"));
+    subexprs e = std::get<subexprs>(read_form(r));
+    std::vector<std::variant<int, symbol, boolean>> expected{1, 2, 3, 4};
     CHECK(e.size() == 3);
     CHECK(std::get<subexprs>((++e.begin())->value()).size() == 2);
     auto valiter = expected.begin();
-    for(auto i = e.begin(); i != e.end(); i++){
+    for (auto i = e.begin(); i != e.end(); i++) {
       std::function<void(expression)> checker;
       checker = [&checker, &valiter](expression x) {
-        std::visit(overloaded{
-            [&checker](subexprs x){
-              for (auto v : x){
-                checker(v.value());
-              }},
-              [&valiter](int x){
-                CHECK(x == get<int>(*valiter));
-                valiter++;
-              },
-              [](auto x [[gnu::unused]]){
-                FAIL();
-              }},
-          x.value());
+        std::visit(overloaded{[&checker](subexprs x) {
+                                for (auto v : x) {
+                                  checker(v.value());
+                                }
+                              },
+                              [&valiter](int x) {
+                                CHECK(x == get<int>(*valiter));
+                                valiter++;
+                              },
+                              [](auto x [[gnu::unused]]) { FAIL(); }},
+                   x.value());
       };
       checker(i->value());
     }
   }
-
 }
 
 TEST_CASE("Check read_string ignore comments in math", "[constructor]") {
@@ -242,31 +236,46 @@ TEST_CASE("Check read_string ignore comments in math", "[constructor]") {
 3)))");
 }
 
-TEST_CASE("Check READ"){
-  SECTION("read from stream"){
+TEST_CASE("Check READ") {
+  SECTION("read from stream") {
     std::istringstream in("1");
     auto e = READ(in);
     CHECK(to_string(std::get<expression>(e).value()) == "1");
   }
 
-  SECTION("Check read from stream multiline"){
+  SECTION("Check read from stream multiline") {
     std::istringstream in("(1\n2)");
     auto e = READ(in);
-    CHECK(to_string(std::get<expression::subexprs>(std::get<expression>(e).value()).front().value()) == "1");
+    CHECK(to_string(
+              std::get<expression::subexprs>(std::get<expression>(e).value())
+                  .front()
+                  .value()) == "1");
   }
 
-  SECTION("Check read from stream multiline with comment in form "){
+  SECTION("Check read from stream multiline with comment in form ") {
     std::istringstream in("(1 ; hello\n2)");
     auto e = READ(in);
-    CHECK(to_string(std::get<expression::subexprs>(std::get<expression>(e).value()).front().value()) == "1");
-    CHECK(to_string((++std::get<expression::subexprs>(std::get<expression>(e).value()).begin())->value()) == "2");
+    CHECK(to_string(
+              std::get<expression::subexprs>(std::get<expression>(e).value())
+                  .front()
+                  .value()) == "1");
+    CHECK(to_string(
+              (++std::get<expression::subexprs>(std::get<expression>(e).value())
+                     .begin())
+                  ->value()) == "2");
   }
 
-  SECTION("Check read from stream multiline with comment after form"){
+  SECTION("Check read from stream multiline with comment after form") {
     std::istringstream in("(1 \n2) ; hello");
     auto e = READ(in);
-    CHECK(to_string(std::get<expression::subexprs>(std::get<expression>(e).value()).front().value()) == "1");
-    CHECK(to_string((++std::get<expression::subexprs>(std::get<expression>(e).value()).begin())->value()) == "2");
+    CHECK(to_string(
+              std::get<expression::subexprs>(std::get<expression>(e).value())
+                  .front()
+                  .value()) == "1");
+    CHECK(to_string(
+              (++std::get<expression::subexprs>(std::get<expression>(e).value())
+                     .begin())
+                  ->value()) == "2");
   }
 
   SECTION("Check read on unclosed paren", "[constructor]") {
@@ -284,7 +293,8 @@ TEST_CASE("Check READ"){
     CHECK_THROWS(READ(in));
   }
 
-  SECTION("Check read on only open paren with comment and new line", "[constructor]") {
+  SECTION("Check read on only open paren with comment and new line",
+          "[constructor]") {
     std::istringstream in("( ;\n");
     CHECK_THROWS(READ(in));
   }
@@ -334,29 +344,28 @@ TEST_CASE("Check read_form handle built in symbols", "[constructor]") {
   auto t = tokenizer("(- * = (+ 3) 4)");
   Reader r(t);
   subexprs e = std::get<subexprs>(read_form(r));
-  std::vector<std::variant<int, symbol, boolean>> expected{"-", "*", "=", "+", 3, 4};
+  std::vector<std::variant<int, symbol, boolean>> expected{"-", "*", "=",
+                                                           "+", 3,   4};
   CHECK(e.size() == 5);
   auto valiter = expected.begin();
-  for(auto i = e.begin(); i != e.end(); i++){
+  for (auto i = e.begin(); i != e.end(); i++) {
     std::function<void(expression)> checker;
     checker = [&checker, &valiter](expression x) {
-      std::visit(overloaded{
-          [&checker](subexprs x){
-            for (auto v : x){
-              checker(v.value());
-            }},
-           [&valiter](int x){
-             CHECK(x == get<int>(*valiter));
-             valiter++;
-           },
-           [&valiter](symbol x){
-             CHECK(x == get<symbol>(*valiter));
-             valiter++;
-           },
-            [](auto x [[gnu::unused]]){
-              FAIL();
-           }},
-        x.value());
+      std::visit(overloaded{[&checker](subexprs x) {
+                              for (auto v : x) {
+                                checker(v.value());
+                              }
+                            },
+                            [&valiter](int x) {
+                              CHECK(x == get<int>(*valiter));
+                              valiter++;
+                            },
+                            [&valiter](symbol x) {
+                              CHECK(x == get<symbol>(*valiter));
+                              valiter++;
+                            },
+                            [](auto x [[gnu::unused]]) { FAIL(); }},
+                 x.value());
     };
     checker(i->value());
   }
@@ -392,7 +401,7 @@ TEST_CASE("Check cabobed symbol", "[constructor]") {
 //   CHECK(to_string(read_string("ay1").value()) == "(ay1)");
 // }
 
-TEST_CASE("Check Cons Cells"){
+TEST_CASE("Check Cons Cells") {
   SECTION("reading cons on sym expressions", "[constructor]") {
     CHECK_NOTHROW(to_string(read_string("(1. 2 )").value()));
     CHECK(to_string(read_string("(1. 2 )").value()) == "(1 . 2)");
@@ -413,12 +422,15 @@ TEST_CASE("Check Cons Cells"){
     CHECK(to_string(read_string("( 2 (1 . 2 ))").value()) == "(2 (1 . 2))");
   }
   SECTION("reading cons expressions", "[constructor]") {
-    auto expers = std::get<expression::subexprs>(read_string("( 2 (1 . 2 ))").value());
+    auto expers =
+        std::get<expression::subexprs>(read_string("( 2 (1 . 2 ))").value());
     CHECK(std::get<int>(expers.front().value()) == 2);
-    CHECK(to_string(std::get<expression::cons>((++expers.begin())->value())) == "(1 . 2)");
+    CHECK(to_string(std::get<expression::cons>((++expers.begin())->value())) ==
+          "(1 . 2)");
   }
   SECTION("reading cons expressions with cons of conses", "[constructor]") {
-    CHECK(to_string(read_string("( (   a . hello  ) . ( 1 . 2 ))").value()) == "((a . hello) . (1 . 2))");
+    CHECK(to_string(read_string("( (   a . hello  ) . ( 1 . 2 ))").value()) ==
+          "((a . hello) . (1 . 2))");
   }
   SECTION("Reading cons with unclosed paren", "[constructor]") {
     CHECK_THROWS(to_string(read_string("( (   a .  . ( 1 . 2 ))").value()));
@@ -437,14 +449,12 @@ TEST_CASE("Check Cons Cells"){
     CHECK_THROWS(to_string(read_string("( a . )").value()));
   }
 
-  SECTION("Reading cons with no open 2nd val and end of reader", "[constructor]") {
+  SECTION("Reading cons with no open 2nd val and end of reader",
+          "[constructor]") {
     CHECK_THROWS(to_string(read_string("( a .").value()));
   }
-  SECTION("Reading cons with no open 2nd val and not end of reader", "[constructor]") {
+  SECTION("Reading cons with no open 2nd val and not end of reader",
+          "[constructor]") {
     CHECK_THROWS(to_string(read_string("( a . ").value()));
   }
 }
-
-// TEST_CASE("Reading multi form string ", "[constructor]") {
-//   CHECK(to_string(read_string(" (1 2 ) ( 1 2) ").value()) == "");
-// }
