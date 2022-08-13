@@ -88,11 +88,33 @@ token Reader::next(){
 };
 sexpr read_list(Reader& r){
   using subexprs = expression::subexprs;
+  using cpack = expression::cons_unpacked;
   r.next();
   DBG("value stored in list " << r.peak());
   subexprs exprs;
   while(r.peak() != ")"){
-    exprs.push_back(read_form(r));
+    if(r.peak() == "."){
+      DBG("possible tuple spotted")
+        r.next();
+      if (exprs.empty() && r.peak() == ")"){
+        // skip the `.`
+        // extract the last element stored in the list
+        expression fst = exprs.back();
+        exprs.pop_back();
+        auto a = expression(std::make_shared<cpack>(fst, read_form(r)));
+        r.next();
+        DBG("tuple finished");
+        return a.value();
+      } else {
+        throw std::runtime_error("Failed to extract cons cell");
+      }
+      // // store the last element in the list as a tuple
+      // exprs.push_back
+      //   (
+      //    );
+    } else {
+      exprs.push_back(read_form(r));
+    }
   }
   r.next();
   return sexpr(exprs);
