@@ -485,11 +485,22 @@ TEST_CASE("Check car") {
     auto res = eval(e, env);
     CHECK(to_string(res) == "a");
   }
-  // TODO Causes a buffer overflow
   SECTION("Check car on empty list") {
     auto e = read_string(R"((car (quote ())))");
     CHECK_THROWS(to_string(eval(e, env)));
   }
+  SECTION("car on func call") {
+    environment env;
+    auto e = read_string(R"(((car (list + 1 2)) 1 2))");
+    CHECK(to_string(eval(e, env)) == "3");
+  }
+
+  SECTION("cdr then car on func call") {
+    environment env;
+    auto e = read_string(R"(((car (cdr (list 1 + 1 2))) 1 2))");
+    CHECK(to_string(eval(e, env)) == "3");
+  }
+
 }
 
 TEST_CASE("Check cdr") {
@@ -627,9 +638,4 @@ TEST_CASE("Check negative numbers numbers") {
   environment env;
   auto e = read_string(R"((+ (quote -1 ) (quote 2)))");
   CHECK_THROWS(to_string(eval(e, env)) == "3");
-}
-TEST_CASE("car on func call") {
-  environment env;
-  auto e = read_string(R"(((car (list + 1 2)) 1 2))");
-  CHECK(to_string(eval(e, env)) == "3");
 }
