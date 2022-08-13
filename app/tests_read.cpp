@@ -402,15 +402,22 @@ TEST_CASE("Reading cons with nothing before", "[constructor]") {
 }
 
 TEST_CASE("Reading cons with nothing before single", "[constructor]") {
-  CHECK_THROWS(to_string(read_string("( . b ").value()));
+  CHECK_THROWS(to_string(read_string("( . b").value()));
 }
 
 TEST_CASE("Reading cons with no close ", "[constructor]") {
-  CHECK_THROWS(to_string(read_string("( a . b ").value()));
+  CHECK_THROWS(to_string(read_string("( a . b").value()));
 }
-TEST_CASE("Reading cons with no 2nd val ", "[constructor]") {
-  CHECK_THROWS(to_string(read_string("( a . ) ").value()));
+TEST_CASE("Reading cons with no 2nd val with paren", "[constructor]") {
+  CHECK_THROWS(to_string(read_string("( a . )").value()));
 }
-TEST_CASE("Reading cons with no open2nd val ", "[constructor]") {
-  CHECK_THROWS(to_string(read_string(" a . ) ").value()) == "");
+
+TEST_CASE("Reading cons with no open 2nd val and end of reader", "[constructor]") {
+  CHECK_THROWS(to_string(read_string("( a .").value()));
 }
+TEST_CASE("Reading cons with no open 2nd val and not end of reader", "[constructor]") {
+  CHECK_THROWS(to_string(read_string("( a . ").value()));
+}
+// TEST_CASE("Reading multi form string ", "[constructor]") {
+//   CHECK(to_string(read_string(" (1 2 ) ( 1 2) ").value()) == "");
+// }
