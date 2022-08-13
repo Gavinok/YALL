@@ -44,17 +44,36 @@ class expression {
 public:
   using subexprs = std::list<expression>;
   using lisp_function = std::function<expression(subexprs::iterator, size_t)>;
-  using sexpr = std::variant< symbol, quoted<expression>, lisp_function, subexprs, int, boolean >;
+  using cons_unpacked = std::pair<expression,expression>;
+  using cons = std::shared_ptr<cons_unpacked>;
+  using sexpr = std::variant< std::monostate, symbol, quoted<expression>,
+                              lisp_function, subexprs, int, boolean,
+                              cons >;
+  expression() = delete;
   expression(sexpr s);
-  expression(expression& e) = default;
   ~expression();
-  expression(const expression& other) = default;
+
   // Return a reference to the expression contained within
   sexpr& value();
-
+  // Resolve the current expression to a given type. If the type can
+  // not be resolved then an exception will be thrown. This is mostly
+  // intended to be used in function calls
+  template<class T>
+  T resolve_to(){
+    return std::visit(overloaded{
+        [](T a) -> T {return a;},
+          [](quoted<expression> a) -> T {return std::get<T>((*a.value).value());},
+          [](auto a) -> T {
+            // throw std::runtime_error("Could not resolve type of " + pr_str(a) +"to integer");
+            throw std::runtime_error("Could not resolve type");
+          }
+          },
+      expr);
+  }
 private:
   sexpr expr;
 };
+
 using token = std::string;
 class Reader{
 public:

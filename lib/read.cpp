@@ -210,8 +210,17 @@ std::string to_string(sexpr s, std::string accum) {
     [](fn& x [[gnu::unused]])  -> str { return "#<YALL Function>"; };
   auto boolean_to_string =
     [](boolean& true_or_false) -> str { return true_or_false.value ? "#t" : "#f";};
+  auto cons_to_string =
+    [](expression::cons& cons) -> str {
+      auto [fst, snd] = *cons;
+      return "(" + to_string(fst.value()) + " . " + to_string(snd.value()) + ")";
+    };
+  auto invalid_state =
+    [](std::monostate a [[gnu::unused]]) -> str { throw std::runtime_error("Cannot determin type when printing "); };
   return std::visit(overloaded
                     {
+                      cons_to_string,
+                      invalid_state,
                       subexpr_to_string,
                       quote_to_string,
                       symbol_to_string,

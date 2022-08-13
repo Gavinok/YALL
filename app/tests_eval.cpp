@@ -546,12 +546,37 @@ TEST_CASE("Check Cons"){
     auto e = read_string(R"((cons (list 1) (list 2 3)))");
     CHECK(to_string(tru_eval(e, env)) == "((1) 2 3)");
   }
-}
-TEST_CASE("Check Conse"){
-  SECTION("Basic cons"){
+  SECTION("Cons numbers"){
     environment env;
     auto e = read_string(R"((cons 1 2))");
-    CHECK(pr_str(tru_eval(e, env)) == "(1 2)");
+    auto res = tru_eval(e, env);
+    std::get<expression::cons>(res);
+    CHECK(to_string(res) == "(1 . 2)");
+  }
+  SECTION("Nested Cons"){
+    environment env;
+    auto e = read_string(R"((cons 1(cons 1 2)))");
+    auto res = tru_eval(e, env);
+    std::get<expression::cons>(res);
+    CHECK(to_string(res) == "(1 . (1 . 2))");
+  }
+  SECTION("Cons with empty quoted list"){
+    environment env;
+    auto e = read_string(R"((cons (quote a) (quote ())))");
+    auto res = tru_eval(e, env);
+    CHECK(to_string(res) == "(a)");
+  }
+  SECTION("Cons with empty list"){
+    environment env;
+    auto e = read_string(R"((cons (quote a) (cdr (list 1))))");
+    auto res = tru_eval(e, env);
+    CHECK(to_string(res) == "(a)");
+  }
+  SECTION("Cons with list on cons of 2"){
+    environment env;
+    auto e = read_string(R"((cons (cons 1 2) (cons 2 (quote ()))))");
+    auto res = tru_eval(e, env);
+    CHECK(to_string(res) == "((1 . 2) 2)");
   }
 }
 
@@ -691,7 +716,7 @@ TEST_CASE("Check complex example"){
                              (quote a)))))");
   tru_eval(e, env);
   e = read_string(R"((let ((tmp (foldThingsIG (list 1 2 3 4 5 6 7 8 9 10))))
-                                 (+ (eval (car tmp))
-                                    (eval (car (cdr tmp))))))");
-  CHECK(pr_str(tru_eval(e, env)) == "-3");
+                                 (+ (car tmp)
+                                    (car (cdr tmp)))))");
+  CHECK(to_string(tru_eval(e, env)) == "-3");
 }
