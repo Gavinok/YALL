@@ -5,10 +5,6 @@
 using symbol = std::string;
 using sexpr = expression::sexpr;
 
-void die(std::string x, int exit_code){
-  std::cerr << x << std::endl;
-  exit(exit_code);
-}
 /*
   Simply attempt to identify the different syntax elements that need
   to be differentiated before proper parsing can take place.
@@ -361,13 +357,13 @@ std::variant<expression, Reader_Responses>  READ(std::istream& is) {
         if(r.peak() == "\n") {
           r.next();
         }
-        return std::nullopt;
       } catch (...) {
         /*
           This line either only contained comments or was blank since
           the only exception that could have been thrown is from the
           reader
         */
+        return EMPTY_LINE;
       }
 
       return read_form(r);
@@ -382,5 +378,7 @@ std::variant<expression, Reader_Responses>  READ(std::istream& is) {
   }
   if (open_parens > 0)
     throw std::runtime_error ("End of file with open parentheses");
-  return std::nullopt;
+
+  // All open parens have been closed and an EOF has been recieved
+  return END_OF_FILE;
 }

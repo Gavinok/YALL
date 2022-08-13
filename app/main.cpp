@@ -19,12 +19,20 @@ void REPL(bool prompt){
   environment env;
   // loop
   for (;;){
-    if (auto e = READ(std::cin)){
-      std::cout << PRINT(eval(*e, env)) << std::endl;
-      prompter();
-    } else {
-      break;
-    }
+    auto should_exit = std::visit(overloaded{
+        [&env, &prompter](expression e){
+          std::cout << PRINT(eval(e, env)) << std::endl;
+          prompter();
+          return false;
+        },
+        [](Reader_Responses r){
+          if (r == END_OF_FILE)
+            return true;
+          return false;
+        },
+        }, READ(std::cin));
+    if (should_exit)
+      return;
   }
 }
 

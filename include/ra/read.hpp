@@ -118,8 +118,9 @@ private:
   std::vector<token>::iterator iter;
 };
 
+enum Reader_Responses {END_OF_FILE, EMPTY_LINE};
+std::variant<expression, Reader_Responses> READ(std::istream& is);
 std::vector<token> tokenizer(std::string str);
-std::optional<expression> READ(std::istream& is);
 expression read_string(std::string str);
 expression::sexpr read_list(Reader& r);
 expression::sexpr read_atom(Reader& r);
