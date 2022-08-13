@@ -9,76 +9,99 @@ void die(std::string x, int exit_code){
   std::cerr << x << std::endl;
   exit(exit_code);
 }
+/*
+  Simply attempt to identify the different syntax elements that need
+  to be differentiated before proper parsing can take place.
+
+  For example "(hello)" =>  [ "(", "hello", ")" ]
+  where [ ] represents a vector of tokens
+*/
 std::vector<token> tokenizer(std::string str){
+  using token = std::string;
   std::vector<token> tokens;
-  std::string cur("");
-  auto store_cur = [&tokens](std::string& cur){
-    if (!cur.empty()){
+  std::string current_atom("");
+
+  // Store the current value and reset the current atom to avoid
+  // accidentally appending other symbols them.
+  auto store_cur = [&tokens](std::string& current_atom){
+    if (!current_atom.empty()){
       DBG("Current token in tokenizer " << cur);
-      tokens.push_back(cur);
-      cur = std::string("");
+      tokens.push_back(current_atom);
+      current_atom.clear();
     }
   };
-  auto store_cur_and_push = [&store_cur, &tokens](std::string& cur, std::string tok){
+
+  // Store the current value and move to the next token
+  auto store_cur_and_push = [&store_cur, &tokens](std::string& cur, token tok){
     store_cur(cur);
     tokens.push_back(tok);
   };
+
   for (auto c = str.begin(); c != str.end(); ++c){
     switch (*c){
       // structure
     case '(':
-      store_cur_and_push(cur, "(");
+      store_cur_and_push(current_atom, "(");
       break;
     case ')':
-      store_cur_and_push(cur, ")");
+      store_cur_and_push(current_atom, ")");
       break;
     case '.':
-      store_cur_and_push(cur, ".");
+      store_cur_and_push(current_atom, ".");
       break;
     case ';': // Comment
-      store_cur_and_push(cur, ";");
+      store_cur_and_push(current_atom, ";");
       break;
       // Whitespace
     case '\n':
-      store_cur_and_push(cur, "\n");
+      store_cur_and_push(current_atom, "\n");
       break;
     case '+':
-      store_cur_and_push(cur, "+");
+      store_cur_and_push(current_atom, "+");
       break;
     case '-':
-      store_cur_and_push(cur, "-");
+      store_cur_and_push(current_atom, "-");
       break;
     case '*':
-      store_cur_and_push(cur, "*");
+      store_cur_and_push(current_atom, "*");
       break;
     case '=':
-      store_cur_and_push(cur, "=");
+      store_cur_and_push(current_atom, "=");
       break;
     case '#':
-      store_cur(cur);
-      cur.push_back(*c);
+      store_cur(current_atom);
+      current_atom.push_back(*c);
       break;
     default:
       if (isspace(*c)){
-        store_cur(cur);
+        store_cur(current_atom);
         break;
       }
       if(isalpha(*c) || isdigit(*c)){
-        cur.push_back(*c);
+        current_atom.push_back(*c);
         break;
       } else
         throw std::runtime_error("Symbols only support alpha numerics");
     }
   }
-  store_cur(cur);
+  store_cur(current_atom);
   return tokens;
 }
 
+/*
+  Return the current token without iterating to the next entry in the
+  reader.
+ */
 token Reader::peak(){
   if (iter == tokens_.end())
     throw std::runtime_error("end of reader on peak");
   return *iter;
 }
+
+/*
+  Return the current token and iterating to the next entry in the
+  reader.
+ */
 token Reader::next(){
   if (iter == tokens_.end())
     throw std::runtime_error("end of reader on next");
@@ -86,6 +109,12 @@ token Reader::next(){
   ++iter;
   return tmp;
 };
+
+/*
+  read_list attempts to read the contents of an expression with the
+  pre condition that the reader has just passed an opening
+  parentheses.
+ */
 sexpr read_list(Reader& r){
   using subexprs = expression::subexprs;
   using cpack = expression::cons_unpacked;
@@ -176,13 +205,22 @@ bool is_builtin(std::string s){
 
   return false;
 }
+
+/*
+  read_atom takes the reader with the precondition that r.peak() will
+  return an atom (an atom meaning some supported representation other
+  than an expression or list). This is then returned as the atoms
+  correspnding lisp value. e.g. if r.peak() returns "1" then it's
+  converted into an integer.
+ */
 sexpr read_atom(Reader& r){
   if (is_number(r.peak()))  return to_number(r.next());
   if (is_symbol(r.peak()))  return to_symbol(r.next());
   if (is_boolean(r.peak())) return to_boolean(r.next());
   if (is_builtin(r.peak())) return to_symbol(r.next());
-  throw std::runtime_error("Expression could not be matched to an atom" + r.peak());
+  throw std::runtime_error("Expression could not be matched to an atom " + r.peak());
 };
+
 void skip_comment(Reader& r) {
   if (r.peak() == ";"){
     DBG("Comment found " << r.peak());
@@ -190,6 +228,11 @@ void skip_comment(Reader& r) {
   }
   r.peak();
 }
+
+/*
+  Read will take the given reader and cont the tokenized contents into
+  a sexpr (aka the internal representation for an expression).
+ */
 sexpr read_form(Reader& r) {
   DBG("Currently reading form");
   skip_comment(r);
@@ -206,15 +249,19 @@ sexpr read_form(Reader& r) {
   return read_atom(r);
 }
 
-// NOTE Default args seems to break recursion
+/*
+  to_string will take a sexpr (some form of yall data type) and return
+  it in a string representation. This is used by the P in REPL to
+  print the current expression.
+*/
 std::string to_string(sexpr s){ return to_string(s, std::string("")); }
 std::string to_string(sexpr s, std::string accum) {
   using str = std::string;
   using subexprs = expression::subexprs;
   using fn = expression::lisp_function;
-  auto quote_to_string = [](quoted<expression>& quoted_e) {
-    return to_string((*(quoted_e.value)).value());
-  };
+
+  // This is the only one that requires us to capture the state of the
+  // accumulator for recursion.
   auto subexpr_to_string = [&accum](subexprs& expressions) {
     str str_representation("(");
     for (auto& v : expressions){
@@ -231,19 +278,32 @@ std::string to_string(sexpr s, std::string accum) {
   // TODO this should not be necessary to call std::to_string
   auto numbers_to_string =
     [](int& x)                 -> str { return std::to_string(x); };
+
   auto symbol_to_string  =
     [](symbol& x)              -> str { return x; };
+
   auto func_to_string    =
     [](fn& x [[gnu::unused]])  -> str { return "#<YALL Function>"; };
+
   auto boolean_to_string =
     [](boolean& true_or_false) -> str { return true_or_false.value ? "#t" : "#f";};
+
   auto cons_to_string =
     [](expression::cons& cons) -> str {
       auto [fst, snd] = *cons;
       return "(" + to_string(fst.value()) + " . " + to_string(snd.value()) + ")";
     };
+
+  auto quote_to_string =
+    [](quoted<expression>& quoted_e) {
+      return to_string((*(quoted_e.value)).value());
+    };
+
   auto invalid_state =
-    [](std::monostate a [[gnu::unused]]) -> str { throw std::runtime_error("Cannot determin type when printing "); };
+    [](std::monostate a [[gnu::unused]]) -> str {
+      throw std::runtime_error("Cannot determin type when printing ");
+    };
+
   return std::visit(overloaded
                     {
                       cons_to_string,
@@ -263,10 +323,6 @@ expression::expression(sexpr s): expr(s) {
   DBG("Constructing Expression With " + to_string(s));
 };
 
-expression::~expression() {
-  DBG("Destructing expression")
-};
-
 sexpr& expression::value () {
   return expr;
 }
@@ -276,7 +332,17 @@ expression read_string(std::string str){
   return expression(read_form(r));
 }
 
-std::optional<expression> READ(std::istream& is) {
+/*
+  The entry point to the REPL used to read an expression from a stream
+  tokenize it and do some preliminary parsing.
+
+  Finally this is returned as either an expression (indicating parsing
+  could be done) or a Reader_Responses of either END_OF_FILE meaning
+  that the end of the given stream was reached or EMPTY_LINE
+  indicating that the last given line did not contain any express and
+  evaluation can be skipped.
+*/
+std::variant<expression, Reader_Responses>  READ(std::istream& is) {
   std::string expression_container;
   std::string accumulator;
   int open_parens = 0;
@@ -289,19 +355,26 @@ std::optional<expression> READ(std::istream& is) {
     Reader r(tokenizer(expression_container));
 
     try {
-      try {// Skip blank lines early and comments early
+      // Skip blank lines early and comments early
+      try {
         skip_comment(r);
         if(r.peak() == "\n") {
           r.next();
         }
-      } catch (...) { // this line either only contained comments or was blank
-        // TODO more explicit version
         return std::nullopt;
+      } catch (...) {
+        /*
+          This line either only contained comments or was blank since
+          the only exception that could have been thrown is from the
+          reader
+        */
       }
 
       return read_form(r);
 
-    } catch (...){ // handle unclosed parentheses
+    } catch (...){
+      // This expression is not yet complete
+      // handle unclosed parentheses
       // TODO this should probably only catch the error associated with parenthesis
       ++open_parens;
       expression_container += "\n";

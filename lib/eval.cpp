@@ -4,6 +4,11 @@ using subexprs = expression::subexprs;
 using lisp_function = expression::lisp_function;
 using sexpr = expression::sexpr;
 
+/*
+  get takes a symbol to look up from the current environment.
+
+  Returns the expression bound to symbol s.
+ */
 sexpr& environment::get(symbol s){
   DBG("Looking up binding for " + to_string(s));
   try {
@@ -13,11 +18,25 @@ sexpr& environment::get(symbol s){
   }
 }
 
+/*
+  set takes a symbol and an expression to bind to that symbol in the
+  current environment.
+
+  Returns the newly bound expression that was bound.
+ */
 sexpr& environment::set(symbol s, sexpr expr){
   DBG("Defining binding for  " + to_string(s));
   return bindings[s] = expr;
 };
 
+/*
+  validate_argument_count simply takes the expected number of
+  arguments and the given number of arguments and compairs them.
+
+  Exceptions are used since currently YALL does not support a proper
+  condition system so the exception is used to pass the invalid
+  arguments to the top level and quit the running REPL
+ */
 void validate_argument_count(size_t expected, size_t given){
   if(given != expected)
     throw std::runtime_error("Expected " + std::to_string(expected) + " arguments"
@@ -25,6 +44,13 @@ void validate_argument_count(size_t expected, size_t given){
 
 }
 
+/*
+  create_lambda takes an expression that will evaluated when the
+  lambda is called and the current environment.
+
+  Returns a new C++ lambda matching the function signature of a
+  lisp_function.
+ */
 sexpr create_lambda(subexprs sub_expressions, environment env){
   using args = environment::args;
   using args_size = environment::args_size;
@@ -76,12 +102,16 @@ sexpr& eval(expression& expr, environment& env){
           DBG("Determined to be a sub expression");
 
           // EMPTY LIST
-          if(sub_expressions.size() == 0) throw std::runtime_error("Invalid syntax in the expression ()");
+          if(sub_expressions.size() == 0)
+            throw std::runtime_error("Invalid syntax in the expression ()");
+
           DBG("Checking the first of the expressions" + to_string(sub_expressions.front().value()));
 
           subexprs::iterator expr_iter = sub_expressions.begin();
           return std::visit(overloaded{
-              [&env, &sub_expressions, &expr_iter](subexprs nested_fn_call [[gnu::unused]]) -> sexpr {
+              [&env, &sub_expressions, &expr_iter](
+                                                   subexprs nested_fn_call [[gnu::unused]]
+                                                   ) -> sexpr {
                 DBG("determined to be yet another expression there for it's a nested function call");
                 auto func = std::get<lisp_function>(eval(*expr_iter, env));
                 return func(++(expr_iter), sub_expressions.size()-1).value();
@@ -114,25 +144,30 @@ sexpr& eval(expression& expr, environment& env){
                   subexprs let_bindings = std::get<subexprs>(fst->value());
                   DBG("getting sub expressions")
                   for(auto& binding: let_bindings){
+
                     subexprs binding_args = std::get<subexprs>(binding.value());
                     validate_argument_count(2 , binding_args.size());
+
                     auto key = binding_args.begin();
                     auto value = ++(binding_args.begin());
                     symbol var = std::get<symbol>(key->value());
+
                     let_env.set(var, eval(*value, env));
                   }
                   return eval(*snd, let_env);
                 }
 
                 // Quoting
-                if (element == "quote"){ // (quote <symbolic-expression>)
+                // (quote <symbolic-expression>)
+                if (element == "quote"){
                   validate_argument_count(1 , sub_expressions.size()-1);
                   DBG("Quoted this ");
                   return sexpr(quoted<expression>{ std::make_shared<expression>(*(++expr_iter)) });
                 }
 
                 // Closures
-                if (element == "lambda"){ // (lambda <lambda-list> <forms>+)
+                // (lambda <lambda-list> <forms>+)
+                if (element == "lambda"){
                   validate_argument_count(2 , sub_expressions.size()-1);
                   return create_lambda(sub_expressions, env);
                 };
@@ -158,6 +193,20 @@ sexpr& eval(expression& expr, environment& env){
   return expr.value();
 }
 
+/*
+  eval_subexpressions takes the current sub expression and attempts to
+  evaluate it.
+
+  if the expression was a symbol then it's binding is looked up from
+  the current environment.
+
+  If the expression is a subexpression e.g. (+ x y) then each
+  expression in that expression will be evaluated. The given
+  expression will then be returned.
+
+  so if x = 1 and y = 2 the list of expressions (x y) will be returned
+  as (1 2).
+ */
 sexpr& eval_subexpressions(expression& expr, environment& env){
   expr = expression(std::visit(overloaded{
       [&env](symbol& sym) -> sexpr { return env.get(sym); },
@@ -179,8 +228,13 @@ sexpr& eval_subexpressions(expression& expr, environment& env){
 using args = environment::args;
 using args_size = environment::args_size;
 
-// TODO
-// Function Signature:  (cons <symbolic-expression> <symbolic-expression>)
+/*
+  append takes 2 lists and appends them creating a new list. 
+
+  NOTE Append does not support appending cons cells.
+
+  Function Signature:  (append <list> <list>)
+ */
 auto yall_append (expression arg1, expression arg2) -> sexpr {
   auto lst = arg1.resolve_to<subexprs>();
   // We don't know if this is a list or just a value yet
@@ -198,8 +252,13 @@ auto yall_append (expression arg1, expression arg2) -> sexpr {
 
 }
 
-// TODO
-// Function Signature:  (cons <symbolic-expression> <symbolic-expression>)
+/*
+  cons takes 2 arguments of any type and creates a cons cell from them.
+  If the second argument is a list then the first argument will
+  instead be inserted into that list.
+
+  Function Signature:  (cons <symbolic-expression> <symbolic-expression>)
+ */
 auto yall_cons (expression fst, expression snd) -> sexpr {
   return std::visit(overloaded{
       [&fst](expression::cons cons) -> sexpr {
@@ -222,8 +281,11 @@ auto yall_cons (expression fst, expression snd) -> sexpr {
       }, snd.value());
 }
 
-// TODO
-// Function Signature:  (car <list>)
+/*
+  car takes a list or cons cell and returns the first element.
+
+  Function Signature:  (car <list>)
+ */
 auto yall_car (expression& list) -> sexpr {
   try{
     auto inner_list = list.resolve_to<subexprs>();
@@ -239,9 +301,12 @@ auto yall_car (expression& list) -> sexpr {
   }
 }
 
-// TODO
-// cdr will take a list or cons cell and return the repaining elements 
-// Function Signature:  (cdr <list>)
+/*
+ cdr takes a list or cons cell and returns everything after the first
+ element.
+
+ Function Signature: (cdr <list>)
+*/
 auto yall_cdr (expression& list) -> sexpr {
   try{
     auto inner_list = list.resolve_to<subexprs>();
@@ -258,8 +323,10 @@ auto yall_cdr (expression& list) -> sexpr {
 
 }
 
-// Since `list` takes variable arguments an iterator must be passed
-// Function Signature:  (list <arg>+)
+/*
+ Since `list` takes variable arguments an iterator must be passed
+ Function Signature:  (list <arg>+)
+*/
 auto yall_list (args& list_elements, args_size size) -> sexpr {
   if(size < 1)
     throw std::runtime_error("Expected at least 1 arguments but got " + std::to_string(size));
@@ -272,6 +339,10 @@ auto yall_list (args& list_elements, args_size size) -> sexpr {
 
 }
 
+/*
+  Default environment containing the standard lisp functions mentioned
+  in the proposal with some extras like print and sleep
+*/
 environment::environment():
   bindings({
     {"+" , [](args operands, args_size size) -> sexpr {

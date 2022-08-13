@@ -12,6 +12,7 @@ using std::get;
 using subexprs = expression::subexprs;
 using sexpr = expression::sexpr;
 
+// General Environment
 TEST_CASE("Environment Lookup") {
   subexprs ex = get<subexprs>(read_string("(+ 1 2)").value());
   environment ev;
@@ -20,8 +21,6 @@ TEST_CASE("Environment Lookup") {
   expression expr = add(tmp.begin(), tmp.size());
   CHECK(get<int>(expr.value()) == 3);
 }
-
-
 TEST_CASE("Environment Lookup with arg lookup") {
   environment ev;
   subexprs ex = get<subexprs>(read_string("(+ 1 2)").value());
