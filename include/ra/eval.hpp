@@ -24,7 +24,6 @@ public:
   ~environment(){
     DBG("Destructing environment");
   }
-  std::function<int(args)>& constructArgs(symbol s);
   sexpr& get(symbol s);
   sexpr& set(symbol s, sexpr expr);
 private:
@@ -36,5 +35,4 @@ private:
 };
 
 expression::sexpr& eval_subexpressions(expression& expr, environment& env);
-expression::sexpr expand(expression::sexpr s, environment env);
 #endif
