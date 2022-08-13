@@ -357,8 +357,14 @@ auto yall_car(expression &list) -> sexpr {
     auto inner_list = list.resolve_to<subexprs>();
     if (inner_list.size() == 0)
       throw std::runtime_error("Car called on empty list");
-    return quoted<expression>{
-        std::make_shared<expression>(inner_list.front().value())};
+
+    // Only need to ensure that symbols stay quoted other wise 
+    return std::visit(overloaded{[](auto s) -> sexpr { return s; },
+                                 [](symbol s) -> sexpr {
+                                   return quoted<expression>{
+                                       std::make_shared<expression>(s)};
+                                 }},
+                      inner_list.front().value());
   } catch (...) {
     DBG("It's not a list");
     auto [head, tail] = (*list.resolve_to<expression::cons>());

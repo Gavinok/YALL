@@ -628,3 +628,8 @@ TEST_CASE("Check negative numbers numbers") {
   auto e = read_string(R"((+ (quote -1 ) (quote 2)))");
   CHECK_THROWS(to_string(eval(e, env)) == "3");
 }
+TEST_CASE("car on func call") {
+  environment env;
+  auto e = read_string(R"(((car (list + 1 2)) 1 2))");
+  CHECK(to_string(eval(e, env)) == "3");
+}
