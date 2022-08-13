@@ -454,15 +454,6 @@ environment::environment()
                     : (size == 3)   ? els->value()
                                     : boolean{false};
            }},
-          {"empty",
-           [](args operands, args_size size) -> sexpr {
-             if (size < 1)
-               throw std::runtime_error(
-                   "Expected at least 1 arguments but got " +
-                   std::to_string(size));
-             subexprs inner_list = operands->resolve_to<subexprs>();
-             return inner_list.empty() ? boolean{true} : boolean{false};
-           }},
           {"list",
            [](args operands, args_size size) -> sexpr {
              return yall_list(operands, size);
