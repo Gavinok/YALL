@@ -38,5 +38,6 @@ target_link_libraries(test_eval eval read Catch2::Catch2)
 
 install(TARGETS lisp DESTINATION bin)
 install(PROGRAMS demo DESTINATION bin)
+install(FILES benchmark.scm DESTINATION bin)
 # install(TARGETS test_read DESTINATION bin)
 # install(TARGETS test_eval DESTINATION bin)
