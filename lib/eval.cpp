@@ -50,7 +50,16 @@ void validate_argument_count(size_t expected, size_t given){
 
   Returns a new C++ lambda matching the function signature of a
   lisp_function.
- */
+
+  NOTE: Due to the complexity of both garbage
+  collection and state managment this copies the
+  current environment which can become expensive the
+  more and more existing definitions exist.
+
+  This is necessary in order to implement proper
+  closures since a closure must hold the current state
+  it was defined in.
+*/
 sexpr create_lambda(subexprs sub_expressions, environment env){
   using args = environment::args;
   using args_size = environment::args_size;
@@ -109,6 +118,7 @@ sexpr& eval(expression& expr, environment& env){
 
           subexprs::iterator expr_iter = sub_expressions.begin();
           return std::visit(overloaded{
+              // This is a function call within a function call
               [&env, &sub_expressions, &expr_iter](
                                                    subexprs nested_fn_call [[gnu::unused]]
                                                    ) -> sexpr {
@@ -116,12 +126,24 @@ sexpr& eval(expression& expr, environment& env){
                 auto func = std::get<lisp_function>(eval(*expr_iter, env));
                 return func(++(expr_iter), sub_expressions.size()-1).value();
               },
+              // The first argument is a symbol
               [&env, &sub_expressions, &expr, &expr_iter](symbol element) -> sexpr {
                 DBG("First arg was a symbol")
-
                   // SPECIAL FORMS
-                  // Defining new variables
-                  if (element == "define"){ // (define <symbol> <symbolic-expression>)
+                  // (define <symbol> <symbolic-expression>)
+                  /*
+                    Define New Variable
+
+                    define is used to store a new value in the current scope.
+                    for example
+
+                    (define x 1)
+                    ; Then evaluate
+                    x
+
+                    The resulting value would be 1.
+                   */
+                  if (element == "define"){
                     DBG("Defining new binding");
                     validate_argument_count(2 , sub_expressions.size()-1);
                     auto fst = ++expr_iter;
@@ -133,7 +155,26 @@ sexpr& eval(expression& expr, environment& env){
                   }
 
                 // Let blocks
-                if (element == "let"){  // (let (<let-bindings>+) <symbolic-expression>)
+                // (let (<let-bindings>+) <symbolic-expression>)
+                // <let-bindings> = (symbol <symbolic-expression>)
+                /*
+                  Used to define a new lexical scope and define local
+                  variables. For example
+
+                  (let ( (x 1)
+                         (y 2) )
+                      (+ x y) )
+
+                  The let will create a new scope and bind x to 1 and y to 2
+                  then the expression (+ x y) will be evaluated to 3.
+
+                  Returns the result of the <symbolic-expression>
+
+                  NOTE: For the same reasons as create_lambda the
+                  creation of new environments is expensive due to all
+                  the copying.
+                 */
+                if (element == "let"){
                   DBG("Creating a new let block");
                   validate_argument_count(2 , sub_expressions.size()-1);
                   auto fst = ++expr_iter;
@@ -159,6 +200,14 @@ sexpr& eval(expression& expr, environment& env){
 
                 // Quoting
                 // (quote <symbolic-expression>)
+                /*
+                  This is used as a way to prevent evaluation. For
+                  example in the expression (eq 1 x) x will be looked
+                  up from the current environment. If you would like
+                  to prevent this quote can be used like so (eq 1 (quote x)).
+
+                  This will return a quoted expression
+                 */
                 if (element == "quote"){
                   validate_argument_count(1 , sub_expressions.size()-1);
                   DBG("Quoted this ");
@@ -167,6 +216,9 @@ sexpr& eval(expression& expr, environment& env){
 
                 // Closures
                 // (lambda <lambda-list> <forms>+)
+                /*
+                  See create_lambda
+                 */
                 if (element == "lambda"){
                   validate_argument_count(2 , sub_expressions.size()-1);
                   return create_lambda(sub_expressions, env);
@@ -180,6 +232,7 @@ sexpr& eval(expression& expr, environment& env){
                 return func(++(expressions.begin()), expressions.size() - 1).value();
 
               },
+              // If this is a symbolic expression that 
               [](auto anything_else [[gnu::unused]]) -> sexpr {
                 throw std::runtime_error("failed to properly evaluate this expression ");
               }
@@ -229,7 +282,7 @@ using args = environment::args;
 using args_size = environment::args_size;
 
 /*
-  append takes 2 lists and appends them creating a new list. 
+  append takes 2 lists and appends them creating a new list.
 
   NOTE Append does not support appending cons cells.
 
