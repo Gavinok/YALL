@@ -246,27 +246,27 @@ TEST_CASE("Check read from stream"){
     // in >> x;
     // CHECK(x == rational(-11 , 20));
   auto e = READ(in);
-  CHECK(pr_str(e->value()) == "1");
+  CHECK(to_string(e->value()) == "1");
 }
 
 TEST_CASE("Check read from stream multiline"){
   std::istringstream in("(1\n2)");
   auto e = READ(in);
-  CHECK(pr_str(std::get<expression::subexprs>(e->value()).front().value()) == "1");
+  CHECK(to_string(std::get<expression::subexprs>(e->value()).front().value()) == "1");
 }
 
 TEST_CASE("Check read from stream multiline with comment in form "){
   std::istringstream in("(1 ; hello\n2)");
   auto e = READ(in);
-  CHECK(pr_str(std::get<expression::subexprs>(e->value()).front().value()) == "1");
-  CHECK(pr_str((++std::get<expression::subexprs>(e->value()).begin())->value()) == "2");
+  CHECK(to_string(std::get<expression::subexprs>(e->value()).front().value()) == "1");
+  CHECK(to_string((++std::get<expression::subexprs>(e->value()).begin())->value()) == "2");
 }
 
 TEST_CASE("Check read from stream multiline with comment after form"){
   std::istringstream in("(1 \n2) ; hello");
   auto e = READ(in);
-  CHECK(pr_str(std::get<expression::subexprs>(e->value()).front().value()) == "1");
-  CHECK(pr_str((++std::get<expression::subexprs>(e->value()).begin())->value()) == "2");
+  CHECK(to_string(std::get<expression::subexprs>(e->value()).front().value()) == "1");
+  CHECK(to_string((++std::get<expression::subexprs>(e->value()).begin())->value()) == "2");
 }
 
 TEST_CASE("Check read on unclosed paren", "[constructor]") {
@@ -350,11 +350,11 @@ TEST_CASE("Check read_form handle built in symbols", "[constructor]") {
     checker(i->value());
   }
 }
-TEST_CASE("Check pr_str with sub lists", "[constructor]") {
+TEST_CASE("Check to_string with sub lists", "[constructor]") {
   auto exp = "(1 (2 (1 9 3)) 4)";
   auto t = tokenizer(exp);
   Reader r(t);
-  CHECK(pr_str(read_form(r)) == exp);
+  CHECK(to_string(read_form(r)) == exp);
 }
 
 TEST_CASE("Check unclosed expression", "[constructor]") {

@@ -5,18 +5,18 @@ using lisp_function = expression::lisp_function;
 using sexpr = expression::sexpr;
 
 sexpr& environment::get(symbol s){
-  DBG("Looking up binding for " + pr_str(s));
+  DBG("Looking up binding for " + to_string(s));
   try {
   return bindings.at(s);
   } catch (...){
   //   if (outer_scopes)
   //     outer_scopes->get(s);
-    throw std::runtime_error("Could not resolve binding for " + pr_str(s));
+    throw std::runtime_error("Could not resolve binding for " + to_string(s));
   }
 }
 
 sexpr& environment::set(symbol s, sexpr expr){
-  DBG("Defining binding for  " + pr_str(s));
+  DBG("Defining binding for  " + to_string(s));
   return bindings[s] = expr;
 };
 
@@ -56,7 +56,7 @@ sexpr create_lambda(subexprs sub_expressions, environment env){
          ++sym, ++arg) {
 
       DBG("lambda list determining argument symbols");
-      DBG("binding " + pr_str((*sym).value()));
+      DBG("binding " + to_string((*sym).value()));
 
       lambda_env.set(std::get<symbol>((*sym).value()),
                      tru_eval(*arg , lambda_env));
@@ -77,8 +77,8 @@ sexpr& tru_eval(expression& expr, environment& env){
           DBG("Determined to be a sub expression");
 
           // EMPTY LIST
-          if(sub_expressions.size() == 0) return sub_expressions;
-          DBG("Checking the first of the expressions" + pr_str(sub_expressions.front().value()));
+          if(sub_expressions.size() == 0) throw std::runtime_error("Invalid syntax in the expression ()");
+          DBG("Checking the first of the expressions" + to_string(sub_expressions.front().value()));
 
           subexprs::iterator expr_iter = sub_expressions.begin();
           return std::visit(overloaded{
@@ -141,7 +141,7 @@ sexpr& tru_eval(expression& expr, environment& env){
                 // BASIC EXPRESSIONS
                 auto expressions = std::get<subexprs>(eval_subexpressions(expr, env));
                 auto func = std::get<lisp_function>(expressions.front().value());
-                DBG("Function was found for " << pr_str(expressions.front().value()));
+                DBG("Function was found for " << to_string(expressions.front().value()));
                 DBG("executing functoin now");
                 return func(++(expressions.begin()), expressions.size() - 1).value();
 
@@ -165,7 +165,7 @@ sexpr& eval_subexpressions(expression& expr, environment& env){
       [&env](subexprs& expressions) -> sexpr {
         subexprs accumulater;
         for(expression& e: expressions){
-          DBG("accumulating the value of expression " + pr_str(e.value()));
+          DBG("accumulating the value of expression " + to_string(e.value()));
           accumulater.push_back(expression(tru_eval(e, env)));
         }
         return sexpr(accumulater);

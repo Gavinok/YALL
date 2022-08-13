@@ -180,18 +180,18 @@ sexpr read_form(Reader& r) {
 }
 
 // NOTE Default args seems to break recursion
-std::string pr_str(sexpr s){ return pr_str(s, std::string("")); }
-std::string pr_str(sexpr s, std::string accum) {
+std::string to_string(sexpr s){ return to_string(s, std::string("")); }
+std::string to_string(sexpr s, std::string accum) {
   using str = std::string;
   using subexprs = expression::subexprs;
   using fn = expression::lisp_function;
   auto quote_to_string = [](quoted<expression>& quoted_e) {
-    return pr_str((*(quoted_e.value)).value());
+    return to_string((*(quoted_e.value)).value());
   };
   auto subexpr_to_string = [&accum](subexprs& expressions) {
     str str_representation("(");
     for (auto& v : expressions){
-      str_representation += pr_str(v.value(), accum) + " ";
+      str_representation += to_string(v.value(), accum) + " ";
     }
 
     if (str_representation.size() == 1)
@@ -224,7 +224,7 @@ std::string pr_str(sexpr s, std::string accum) {
 // The base type of an expression in the grammer this is represented
 // by <symbolic-expression>
 expression::expression(sexpr s): expr(s) {
-  DBG("Constructing Expression With " + pr_str(s));
+  DBG("Constructing Expression With " + to_string(s));
 };
 
 expression::~expression() {
@@ -253,7 +253,6 @@ std::optional<expression> READ(std::istream& is) {
     Reader r(tokenizer(expression_container));
 
     try {
-
       try {// Skip blank lines early and comments early
         skip_comment(r);
         if(r.peak() == "\n") {
