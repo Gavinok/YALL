@@ -37,11 +37,16 @@ void REPL(bool prompt){
 }
 
 int main (int argc, char *argv[]){
-  if ( (argc == 2) && ((strncmp(argv[1] ,"-i", 2) == 0)
-                       ||(strncmp(argv[1] ,"--interactive", 13) == 0)) ){
-    REPL(true);
-    return 0;
+  try {
+    if ( (argc == 2) && ((strncmp(argv[1] ,"-i", 2) == 0)
+                         ||(strncmp(argv[1] ,"--interactive", 13) == 0)) ){
+      REPL(true);
+      return 0;
+    }
+    REPL(false);
+  } catch (...){
+    std::cerr << "Undefined Behavior Encountered";
+    return 1;
   }
-  REPL(false);
   return 0;
 }
