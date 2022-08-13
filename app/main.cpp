@@ -20,7 +20,7 @@ void REPL(bool prompt){
   // loop
   for (;;){
     if (auto e = READ(std::cin)){
-      std::cout << PRINT(tru_eval(*e, env)) << std::endl;
+      std::cout << PRINT(eval(*e, env)) << std::endl;
       prompter();
     } else {
       break;

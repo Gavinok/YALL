@@ -7,10 +7,8 @@ using sexpr = expression::sexpr;
 sexpr& environment::get(symbol s){
   DBG("Looking up binding for " + to_string(s));
   try {
-  return bindings.at(s);
+    return bindings.at(s);
   } catch (...){
-  //   if (outer_scopes)
-  //     outer_scopes->get(s);
     throw std::runtime_error("Could not resolve binding for " + to_string(s));
   }
 }
@@ -59,19 +57,20 @@ sexpr create_lambda(subexprs sub_expressions, environment env){
       DBG("binding " + to_string((*sym).value()));
 
       lambda_env.set(std::get<symbol>((*sym).value()),
-                     tru_eval(*arg , lambda_env));
+                     eval(*arg , lambda_env));
 
       DBG("lambda list symbols are now bound");
 
     }
-    return tru_eval(expr , lambda_env);
+    return eval(expr , lambda_env);
   };
 
   DBG("New lambda defined");
 
   return lambda;
 }
-sexpr& tru_eval(expression& expr, environment& env){
+
+sexpr& eval(expression& expr, environment& env){
   expr = expression(std::visit(overloaded{
         [&expr, &env](subexprs& sub_expressions) -> sexpr {
           DBG("Determined to be a sub expression");
@@ -84,7 +83,7 @@ sexpr& tru_eval(expression& expr, environment& env){
           return std::visit(overloaded{
               [&env, &sub_expressions, &expr_iter](subexprs nested_fn_call [[gnu::unused]]) -> sexpr {
                 DBG("determined to be yet another expression there for it's a nested function call");
-                auto func = std::get<lisp_function>(tru_eval(*expr_iter, env));
+                auto func = std::get<lisp_function>(eval(*expr_iter, env));
                 return func(++(expr_iter), sub_expressions.size()-1).value();
               },
               [&env, &sub_expressions, &expr, &expr_iter](symbol element) -> sexpr {
@@ -99,7 +98,7 @@ sexpr& tru_eval(expression& expr, environment& env){
                     auto snd = ++expr_iter;
 
                     symbol symbol_to_bind = std::get<symbol>(fst->value());
-                    env.set(symbol_to_bind, tru_eval(*snd, env));
+                    env.set(symbol_to_bind, eval(*snd, env));
                     return snd->value();
                   }
 
@@ -120,9 +119,9 @@ sexpr& tru_eval(expression& expr, environment& env){
                     auto key = binding_args.begin();
                     auto value = ++(binding_args.begin());
                     symbol var = std::get<symbol>(key->value());
-                    let_env.set(var, tru_eval(*value, env));
+                    let_env.set(var, eval(*value, env));
                   }
-                  return tru_eval(*snd, let_env);
+                  return eval(*snd, let_env);
                 }
 
                 // Quoting
@@ -166,7 +165,7 @@ sexpr& eval_subexpressions(expression& expr, environment& env){
         subexprs accumulater;
         for(expression& e: expressions){
           DBG("accumulating the value of expression " + to_string(e.value()));
-          accumulater.push_back(expression(tru_eval(e, env)));
+          accumulater.push_back(expression(eval(e, env)));
         }
         return sexpr(accumulater);
      },
@@ -264,7 +263,6 @@ auto yall_cdr (expression& list) -> sexpr {
 auto yall_list (args& list_elements, args_size size) -> sexpr {
   if(size < 1)
     throw std::runtime_error("Expected at least 1 arguments but got " + std::to_string(size));
-  std::cout << "creating list " << std::endl;
   auto new_list = std::make_shared<expression>(subexprs{*list_elements});
 
   args_size count = 0;
@@ -294,7 +292,7 @@ environment::environment():
         operands->resolve_to<int>() == (++operands)->resolve_to<int>()
       };
     }},
-    {"eq" , [this](args operands, args_size size) -> sexpr {
+    {"eq" , [](args operands, args_size size) -> sexpr {
       validate_argument_count(2, size);
 
       auto fst = operands, snd = ++operands;
@@ -353,12 +351,12 @@ environment::environment():
 
       std::cout << to_string(operands->value())  << "\n";
       return (*operands).value();
-    }}
+    }},
     // // TODO All of these need to be given the right environemnt
     // {"map" , [this](args operands, args_size size) -> sexpr {
     //   validate_argument_count(2, size);
 
-    //   auto func = std::get<expression::lisp_function>(tru_eval(*operands, *this));
+    //   auto func = std::get<expression::lisp_function>(eval(*operands, *this));
     //   auto e = (*( std::get<quoted<expression>>( (++operands)->value() ).value )).value();
     //   auto lst = std::get<subexprs>(e);
 
@@ -375,7 +373,7 @@ environment::environment():
     // {"filter" , [this](args operands, args_size size) -> sexpr {
     //   validate_argument_count(2, size);
 
-    //   auto func = std::get<expression::lisp_function>(tru_eval(*operands, *this));
+    //   auto func = std::get<expression::lisp_function>(eval(*operands, *this));
     //   auto e = (*(std::get<quoted<expression>>((++operands)->value()).value)).value();
     //   auto lst = std::get<subexprs>(e);
 
@@ -390,12 +388,13 @@ environment::environment():
     //   return quoted<expression>{
     //     std::make_shared<expression>(accumulator)
     //   };
-    // }},
+    // }}
+      // ,
     // // TODO Handle lists better
     // {"foldl" , [this](args operands, args_size size) -> sexpr { //  (foldl )
     //   validate_argument_count(3, size);
 
-    //   auto func = std::get<expression::lisp_function>(tru_eval(*operands, *this));
+    //   auto func = std::get<expression::lisp_function>(eval(*operands, *this));
     //   auto accumulator = (++operands)->value();
 
     //   expression::sexpr e =
@@ -417,16 +416,27 @@ environment::environment():
     //   return quoted<expression>{
     //     std::make_shared<expression>(accumulator)
     //   };
-    // }},
+    // }}
+      ,
     // // Nice to haves
     // // TODO never said I'd make this avalilable to the user in the proposal but would be a nice to have
     // // todo can't find info from the outer environment
-    // {"eval" , [this](args operands, args_size size) -> sexpr {
+    // {"eval" , [](args operands, args_size size, environment env) -> sexpr {
     //   validate_argument_count(1, size);
-    //   std::cout << "eval this " + to_string(operands->value()) + "\n" << std::endl;
-    //   expression holder = read_string(to_string(operands->value()));
-    //   return tru_eval(holder, *this);
+    //   // std::cout << "eval this " + to_string(operands->value()) + "\n" << std::endl;
+    //   // expression holder = read_string(to_string(operands->value()));
+
+    //   // expression holder = std::visit(overloaded{
+    //   //     [](quoted<expression> b) -> sexpr { return b.value->value(); },
+    //   //     [](subexprs a) -> sexpr {
+    //   //       for(auto i : a){
+    //   //       }
+    //   //       return a; },
+    //   //     [](auto a) -> sexpr { return a; },
+    //   //     }, operands->value());
+    //   expression holder = operands;
+    //   std::cout << "final result was " + to_string(holder.value()) + "\n";
+    //   return eval(holder, env);
     // }},
     }){};
-  
 

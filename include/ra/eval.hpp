@@ -5,7 +5,7 @@
 #include "ra/read.hpp"
 class environment;
 
-expression::sexpr& tru_eval(expression& expr, environment& env);
+expression::sexpr& eval(expression& expr, environment& env);
 void validate_argument_count(size_t expected, size_t given);
 
 class environment {
