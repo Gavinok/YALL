@@ -363,3 +363,54 @@ TEST_CASE("Check unclosed expression", "[constructor]") {
   Reader r(t);
   CHECK_THROWS(read_form(r));
 }
+TEST_CASE("reading cons on sym expressions", "[constructor]") {
+  CHECK_NOTHROW(to_string(read_string("(1. 2 )").value()));
+  CHECK(to_string(read_string("(1. 2 )").value()) == "(1 . 2)");
+}
+
+TEST_CASE("reading cons expressions no space", "[constructor]") {
+  auto expers = std::get<expression::cons>(read_string("(1 . 2 )").value());
+  CHECK(std::get<int>(expers->first.value()) == 1);
+  CHECK(std::get<int>(expers->second.value()) == 2);
+  CHECK(to_string(expers) == "(1 . 2)");
+}
+
+TEST_CASE("reading cons expressions nested", "[constructor]") {
+  CHECK(to_string(read_string("((1 . 2 ))").value()) == "((1 . 2))");
+}
+
+TEST_CASE("reading cons expressions in list ", "[constructor]") {
+  CHECK(to_string(read_string("( 2 (1 . 2 ))").value()) == "(2 (1 . 2))");
+}
+TEST_CASE("reading cons expressions", "[constructor]") {
+  auto expers = std::get<expression::subexprs>(read_string("( 2 (1 . 2 ))").value());
+  CHECK(std::get<int>(expers.front().value()) == 2);
+  CHECK(to_string(std::get<expression::cons>((++expers.begin())->value())) == "(1 . 2)");
+}
+
+TEST_CASE("reading cons expressions with cons of conses", "[constructor]") {
+  CHECK(to_string(read_string("( (   a . hello  ) . ( 1 . 2 ))").value()) == "((a . hello) . (1 . 2))");
+}
+TEST_CASE("Reading cons with unclosed paren", "[constructor]") {
+  CHECK_THROWS(to_string(read_string("( (   a .  . ( 1 . 2 ))").value()));
+}
+
+
+// This is the cause of the leak
+TEST_CASE("Reading cons with nothing before", "[constructor]") {
+  CHECK_THROWS(to_string(read_string("( ( . b  . ( 1 . 2 ))").value()));
+}
+
+TEST_CASE("Reading cons with nothing before single", "[constructor]") {
+  CHECK_THROWS(to_string(read_string("( . b ").value()));
+}
+
+TEST_CASE("Reading cons with no close ", "[constructor]") {
+  CHECK_THROWS(to_string(read_string("( a . b ").value()));
+}
+TEST_CASE("Reading cons with no 2nd val ", "[constructor]") {
+  CHECK_THROWS(to_string(read_string("( a . ) ").value()));
+}
+TEST_CASE("Reading cons with no open2nd val ", "[constructor]") {
+  CHECK_THROWS(to_string(read_string(" a . ) ").value()) == "");
+}
