@@ -6,6 +6,9 @@
 # with .scm or set your editor to a some sort of scheme file type
 # supporting mode
 
+# cd to what ever path this demo is being ran from
+cd "$(dirname "$0")"
+
 cat << EOF  | ./lisp
 (define short-sleep 4)
 (define mid-sleep  5)
