@@ -21,7 +21,6 @@ std::vector<token> tokenizer(std::string str) {
   // accidentally appending other symbols them.
   auto store_cur = [&tokens](std::string &current_atom) {
     if (!current_atom.empty()) {
-      DBG("Current token in tokenizer " << cur);
       tokens.push_back(current_atom);
       current_atom.clear();
     }
@@ -90,7 +89,7 @@ std::vector<token> tokenizer(std::string str) {
  */
 token Reader::peak() {
   if (iter == tokens_.end())
-    throw std::runtime_error("end of reader on peak");
+    throw std::runtime_error("End of reader on peak");
   return *iter;
 }
 
@@ -100,7 +99,7 @@ token Reader::peak() {
  */
 token Reader::next() {
   if (iter == tokens_.end())
-    throw std::runtime_error("end of reader on next");
+    throw std::runtime_error("End of reader on next");
   token tmp = *iter;
   ++iter;
   return tmp;
@@ -142,7 +141,7 @@ sexpr read_list(Reader &r) {
       DBG("tuple finished");
 
       if (r.peak() != ")")
-        throw std::runtime_error("Failed to extract cons cell");
+        throw std::invalid_argument("Failed to extract cons cell");
 
       // move past the closing parentheses
       r.next();
@@ -385,8 +384,6 @@ std::variant<expression, Reader_Responses> READ(std::istream &is) {
     } catch (std::runtime_error &e) {
       // This expression is not yet complete
       // handle unclosed parentheses
-      // TODO this should probably only catch the error associated with
-      // parenthesis
       ++open_parens;
       expression_container += "\n";
     }
