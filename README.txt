@@ -18,7 +18,7 @@
   Run the command
 
   ,----
-  | cmake -H. -Btmp -DCMAKE_INSTALL_PREFIX =~/.local/bin/
+  | cmake -H. -Btmp -DCMAKE_INSTALL_PREFIX=~/.local/bin/
   `----
 
   Then
