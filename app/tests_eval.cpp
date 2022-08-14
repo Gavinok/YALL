@@ -637,3 +637,17 @@ TEST_CASE("Check negative numbers") {
   auto e = read_string(R"((+ (quote -1 ) (quote 2)))");
   CHECK(to_string(yall::eval(e, env)) == "1");
 }
+
+TEST_CASE("yall::read on large ints") {
+  environment ev;
+  auto tmp = read_string("(quote 1000000000000000000000000000000000000000000 )");
+  CHECK_NOTHROW(to_string(yall::eval(tmp, ev)) == "-1");
+}
+
+TEST_CASE("yall::read on large symbols ints") {
+  environment ev;
+  auto tmp = read_string("(define  jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj 10)");
+  to_string(yall::eval(tmp, ev));
+  tmp = read_string("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj");
+  CHECK(to_string(yall::eval(tmp, ev)) == "10");
+}
