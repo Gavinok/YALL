@@ -384,77 +384,113 @@ TEST_CASE("Check unclosed expression", "[constructor]") {
   CHECK_THROWS(read_form(r));
 }
 
-TEST_CASE("Check cabobed symbol", "[constructor]") {
-  CHECK(to_string(read_string("hello-world").value()) == "hello-world");
-}
+// The grammar I made actually says we don't support this
+// TEST_CASE("Check cabobed symbol", "[constructor]") {
+//   CHECK(to_string(read_string("hello-world").value()) == "hello-world");
+// }
+
+// TEST_CASE("Check ending in - symbol", "[constructor]") {
+//   CHECK(to_string(read_string("hello-world").value()) == "hello-world");
+// }
 
 // TODO proper alpha numerics
-// TEST_CASE("Check alpha numerics in list", "[constructor]") {
-//   CHECK(to_string(read_string("(a1)").value()) == "(a1)");
-// }
+TEST_CASE("Alpha Numerics") {
+  SECTION("Check alpha numerics in list", "[constructor]") {
+    CHECK(to_string(read_string("( a1 )").value()) == "(a1)");
+  }
 
-// TEST_CASE("Check alpha numerics", "[constructor]") {
-//   CHECK(to_string(read_string("(b1c)").value()) == "(b1c)");
-// }
+  SECTION("Check alpha numerics", "[constructor]") {
+    CHECK(to_string(read_string("( b1c)").value()) == "(b1c)");
+  }
 
-// TEST_CASE("Check alpha numerics sym", "[constructor]") {
-//   CHECK(to_string(read_string("ay1").value()) == "(ay1)");
-// }
+  SECTION("Check alpha numerics sym", "[constructor]") {
+    CHECK(to_string(read_string("(   ay1 )").value()) == "(ay1)");
+  }
+
+  SECTION("Check alpha numerics sym with num at start", "[constructor]") {
+    CHECK_THROWS(to_string(read_string("1ay1").value()));
+  }
+}
+
+TEST_CASE("Check alpha numerics in list") {
+  CHECK(to_string(read_string("a1-").value()) == "a1");
+}
+
+TEST_CASE("Always invalid input ") {
+  SECTION("invalid symbol") {
+    CHECK_THROWS(to_string(read_string("<").value()));
+  }
+  SECTION("multiple hashes") {
+    CHECK_THROWS(to_string(read_string("##").value()));
+  }
+  SECTION("hashes on other than tru") {
+    CHECK_THROWS(to_string(read_string("#b").value()));
+  }
+}
 
 TEST_CASE("Check Cons Cells") {
-  SECTION("reading cons on sym expressions", "[constructor]") {
+  SECTION("reading cons on sym expressions") {
     CHECK_NOTHROW(to_string(read_string("(1. 2 )").value()));
     CHECK(to_string(read_string("(1. 2 )").value()) == "(1 . 2)");
   }
 
-  SECTION("reading cons expressions no space", "[constructor]") {
+  SECTION("reading cons expressions no space") {
     auto expers = std::get<expression::cons>(read_string("(1 . 2 )").value());
     CHECK(std::get<int>(expers->first.value()) == 1);
     CHECK(std::get<int>(expers->second.value()) == 2);
     CHECK(to_string(expers) == "(1 . 2)");
   }
 
-  SECTION("reading cons expressions nested", "[constructor]") {
+  SECTION("reading cons expressions nested") {
     CHECK(to_string(read_string("((1 . 2 ))").value()) == "((1 . 2))");
   }
 
-  SECTION("reading cons expressions in list ", "[constructor]") {
+  SECTION("reading cons expressions in list ") {
     CHECK(to_string(read_string("( 2 (1 . 2 ))").value()) == "(2 (1 . 2))");
   }
-  SECTION("reading cons expressions", "[constructor]") {
+  SECTION("reading cons expressions") {
     auto expers =
         std::get<expression::subexprs>(read_string("( 2 (1 . 2 ))").value());
     CHECK(std::get<int>(expers.front().value()) == 2);
     CHECK(to_string(std::get<expression::cons>((++expers.begin())->value())) ==
           "(1 . 2)");
   }
-  SECTION("reading cons expressions with cons of conses", "[constructor]") {
+  SECTION("reading cons expressions with cons of conses") {
     CHECK(to_string(read_string("( (   a . hello  ) . ( 1 . 2 ))").value()) ==
           "((a . hello) . (1 . 2))");
   }
-  SECTION("Reading cons with unclosed paren", "[constructor]") {
+  SECTION("Reading cons with unclosed paren") {
     CHECK_THROWS(to_string(read_string("( (   a .  . ( 1 . 2 ))").value()));
   }
   // This is the cause of the leak
-  SECTION("Reading cons with nothing before", "[constructor]") {
+  SECTION("Reading cons with nothing before") {
     CHECK_THROWS(to_string(read_string("( ( . b  . ( 1 . 2 ))").value()));
   }
-  SECTION("Reading cons with nothing before single", "[constructor]") {
+  SECTION("Reading cons with nothing before single") {
     CHECK_THROWS(to_string(read_string("( . b").value()));
   }
-  SECTION("Reading cons with no close ", "[constructor]") {
+  SECTION("Reading cons with no close ") {
     CHECK_THROWS(to_string(read_string("( a . b").value()));
   }
-  SECTION("Reading cons with no 2nd val with paren", "[constructor]") {
+  SECTION("Reading cons with no 2nd val with paren") {
     CHECK_THROWS(to_string(read_string("( a . )").value()));
   }
 
-  SECTION("Reading cons with no open 2nd val and end of reader",
-          "[constructor]") {
+  SECTION("Reading cons with no open 2nd val and end of reader") {
     CHECK_THROWS(to_string(read_string("( a .").value()));
   }
-  SECTION("Reading cons with no open 2nd val and not end of reader",
-          "[constructor]") {
+  SECTION("Reading cons with no open 2nd val and not end of reader") {
     CHECK_THROWS(to_string(read_string("( a . ").value()));
+  }
+  SECTION("multiple atoms in cons") {
+    CHECK_THROWS(to_string(read_string("(1 a . c)").value()));
+  }
+  SECTION("READ atoms in cons") {
+    std::istringstream in("(quote ( 1 2 . 3) )");
+    CHECK_THROWS(READ(in));
+  }
+  SECTION("READ atoms extra after dot") {
+    std::istringstream in("(quote ( 1 . 3 4) )");
+    CHECK_THROWS(READ(in));
   }
 }
