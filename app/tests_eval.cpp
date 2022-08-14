@@ -42,7 +42,7 @@ TEST_CASE("Check Addition") {
   SECTION("Check add quoted numbers in list") {
     environment env;
     auto e = read_string(R"((+ (car (list -1 )) (car (quote (2)))))");
-    CHECK_THROWS(to_string(eval(e, env)) == "1");
+    CHECK(to_string(eval(e, env)) == "1");
   }
 
   SECTION("basic eval with list add") {
@@ -632,8 +632,8 @@ TEST_CASE("Check base list empty") {
   CHECK_THROWS(to_string(eval(e, env)));
 }
 
-TEST_CASE("Check negative numbers numbers") {
+TEST_CASE("Check negative numbers") {
   environment env;
   auto e = read_string(R"((+ (quote -1 ) (quote 2)))");
-  CHECK_THROWS(to_string(eval(e, env)) == "3");
+  CHECK(to_string(eval(e, env)) == "1");
 }
