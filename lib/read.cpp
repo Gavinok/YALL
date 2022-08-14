@@ -168,8 +168,11 @@ int to_number(std::string s) {
 }
 
 bool is_symbol(std::string s) {
+  // symbols have to start with a letter
+  if (!std::isalpha(s.at(0)))
+    return false;
   for (char &c : s) {
-    if (!std::isalpha(c))
+    if (!(std::isalpha(c) || isdigit(c)))
       return false;
   }
   return true;
