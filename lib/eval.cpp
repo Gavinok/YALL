@@ -46,7 +46,7 @@ void validate_argument_count(size_t expected, size_t given) {
 }
 
 /*
-  create_lambda takes an expression that will evaluated when the
+  create_lambda takes an expression that will yall::evaluated when the
   lambda is called and the current environment.
 
   Returns a new C++ lambda matching the function signature of a
@@ -92,11 +92,11 @@ sexpr create_lambda(subexprs sub_expressions, environment env) {
       DBG("lambda list determining argument symbols");
       DBG("binding " + to_string((*sym).value()));
 
-      lambda_env.set(std::get<symbol>((*sym).value()), eval(*arg, lambda_env));
+      lambda_env.set(std::get<symbol>((*sym).value()), yall::eval(*arg, lambda_env));
 
       DBG("lambda list symbols are now bound");
     }
-    return eval(expr, lambda_env);
+    return yall::eval(expr, lambda_env);
   };
 
   DBG("New lambda defined");
@@ -104,7 +104,7 @@ sexpr create_lambda(subexprs sub_expressions, environment env) {
   return lambda;
 }
 
-sexpr &eval(expression &expr, environment &env) {
+sexpr &yall::eval(expression &expr, environment &env) {
   expr = expression(std::visit(
       overloaded{
           [&expr, &env](subexprs &sub_expressions) -> sexpr {
@@ -126,7 +126,7 @@ sexpr &eval(expression &expr, environment &env) {
                       DBG("determined to be yet another expression there for "
                           "it's a nested function call");
                       auto func =
-                          std::get<lisp_function>(eval(*expr_iter, env));
+                        std::get<lisp_function>(yall::eval(*expr_iter, env));
                       return func(++(expr_iter), sub_expressions.size() - 1)
                           .value();
                     },
@@ -143,7 +143,7 @@ sexpr &eval(expression &expr, environment &env) {
                         scope. for example
 
                         (define x 1)
-                        ; Then evaluate
+                        ; Then yall::evaluate
                         x
 
                         The resulting value would be 1.
@@ -155,7 +155,7 @@ sexpr &eval(expression &expr, environment &env) {
                         auto snd = ++expr_iter;
 
                         symbol symbol_to_bind = std::get<symbol>(fst->value());
-                        env.set(symbol_to_bind, eval(*snd, env));
+                        env.set(symbol_to_bind, yall::eval(*snd, env));
                         return snd->value();
                       }
 
@@ -171,7 +171,7 @@ sexpr &eval(expression &expr, environment &env) {
                             (+ x y) )
 
                         The let will create a new scope and bind x to 1 and y to
-                        2 then the expression (+ x y) will be evaluated to 3.
+                        2 then the expression (+ x y) will be yall::evaluated to 3.
 
                         Returns the result of the <symbolic-expression>
 
@@ -201,15 +201,15 @@ sexpr &eval(expression &expr, environment &env) {
                           auto value = ++(binding_args.begin());
                           symbol var = std::get<symbol>(key->value());
 
-                          let_env.set(var, eval(*value, env));
+                          let_env.set(var, yall::eval(*value, env));
                         }
-                        return eval(*snd, let_env);
+                        return yall::eval(*snd, let_env);
                       }
 
                       // Quoting
                       // (quote <symbolic-expression>)
                       /*
-                        This is used as a way to prevent evaluation. For
+                        This is used as a way to prevent yall::evaluation. For
                         example in the expression (eq 1 x) x will be looked
                         up from the current environment. If you would like
                         to prevent this quote can be used like so (eq 1 (quote
@@ -236,7 +236,7 @@ sexpr &eval(expression &expr, environment &env) {
 
                       // BASIC EXPRESSIONS
                       auto expressions =
-                          std::get<subexprs>(eval_subexpressions(expr, env));
+                        std::get<subexprs>(eval_subexpressions(expr, env));
                       auto func =
                           std::get<lisp_function>(expressions.front().value());
                       DBG("Function was found for "
@@ -249,7 +249,7 @@ sexpr &eval(expression &expr, environment &env) {
                     // If this is a symbolic expression that
                     [](auto anything_else [[gnu::unused]]) -> sexpr {
                       throw std::runtime_error(
-                          "failed to properly evaluate this expression ");
+                          "failed to properly yall::evaluate this expression ");
                     }},
                 expr_iter->value());
           },
@@ -261,14 +261,14 @@ sexpr &eval(expression &expr, environment &env) {
 }
 
 /*
-  eval_subexpressions takes the current sub expression and attempts to
-  evaluate it.
+  yall::eval_subexpressions takes the current sub expression and attempts to
+  yall::evaluate it.
 
   if the expression was a symbol then it's binding is looked up from
   the current environment.
 
   If the expression is a subexpression e.g. (+ x y) then each
-  expression in that expression will be evaluated. The given
+  expression in that expression will be yall::evaluated. The given
   expression will then be returned.
 
   so if x = 1 and y = 2 the list of expressions (x y) will be returned
@@ -282,7 +282,7 @@ sexpr &eval_subexpressions(expression &expr, environment &env) {
                    for (expression &e : expressions) {
                      DBG("accumulating the value of expression " +
                          to_string(e.value()));
-                     accumulater.push_back(expression(eval(e, env)));
+                     accumulater.push_back(expression(yall::eval(e, env)));
                    }
                    return sexpr(accumulater);
                  },

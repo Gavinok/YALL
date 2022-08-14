@@ -32,6 +32,8 @@ private:
   std::map<symbol, sexpr> bindings;
 };
 
-expression::sexpr &eval(expression &expr, environment &env);
+namespace yall {
+  expression::sexpr &eval(expression &expr, environment &env);
+}
 expression::sexpr &eval_subexpressions(expression &expr, environment &env);
 #endif

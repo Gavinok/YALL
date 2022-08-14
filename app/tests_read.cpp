@@ -235,16 +235,16 @@ TEST_CASE("Check read_string ignore comments in math", "[constructor]") {
 3)))");
 }
 
-TEST_CASE("Check READ") {
+TEST_CASE("Check yall::read") {
   SECTION("read from stream") {
     std::istringstream in("1");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(to_string(std::get<expression>(e).value()) == "1");
   }
 
   SECTION("Check read from stream multiline") {
     std::istringstream in("(1\n2)");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(to_string(
               std::get<expression::subexprs>(std::get<expression>(e).value())
                   .front()
@@ -253,7 +253,7 @@ TEST_CASE("Check READ") {
 
   SECTION("Check read from stream multiline with comment in form ") {
     std::istringstream in("(1 ; hello\n2)");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(to_string(
               std::get<expression::subexprs>(std::get<expression>(e).value())
                   .front()
@@ -266,7 +266,7 @@ TEST_CASE("Check READ") {
 
   SECTION("Check read from stream multiline with comment after form") {
     std::istringstream in("(1 \n2) ; hello");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(to_string(
               std::get<expression::subexprs>(std::get<expression>(e).value())
                   .front()
@@ -279,63 +279,63 @@ TEST_CASE("Check READ") {
 
   SECTION("Check read on unclosed paren", "[constructor]") {
     std::istringstream in("(");
-    CHECK_THROWS(READ(in));
+    CHECK_THROWS(yall::read(in));
   }
 
   SECTION("Check read on only closed paren", "[constructor]") {
     std::istringstream in("(");
-    CHECK_THROWS(READ(in));
+    CHECK_THROWS(yall::read(in));
   }
 
   SECTION("Check read on only open paren with comment", "[constructor]") {
     std::istringstream in("( ;");
-    CHECK_THROWS(READ(in));
+    CHECK_THROWS(yall::read(in));
   }
 
   SECTION("Check read on only open paren with comment and new line",
           "[constructor]") {
     std::istringstream in("( ;\n");
-    CHECK_THROWS(READ(in));
+    CHECK_THROWS(yall::read(in));
   }
 
   SECTION("Check read on only hash", "[constructor]") {
     std::istringstream in("#");
-    CHECK_THROWS(READ(in));
+    CHECK_THROWS(yall::read(in));
   }
 
   SECTION("Check read on empty line", "[constructor]") {
     std::istringstream in("");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(std::get<Reader_Responses>(e) == END_OF_FILE);
   }
 
   SECTION("Check read only new line", "[constructor]") {
     std::istringstream in("\n");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(std::get<Reader_Responses>(e) == END_OF_FILE);
   }
 
   SECTION("Check read reading comment with new lins", "[constructor]") {
     std::istringstream in(";; hello\n");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(std::get<Reader_Responses>(e) == EMPTY_LINE);
   }
 
   SECTION("Check read whitespace empty line", "[constructor]") {
     std::istringstream in(" ");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(std::get<Reader_Responses>(e) == EMPTY_LINE);
   }
 
   SECTION("Check read ignore line comments nested", "[constructor]") {
     std::istringstream in(";; hello");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(std::get<Reader_Responses>(e) == EMPTY_LINE);
   }
 
   SECTION("Check read ignore line comments", "[constructor]") {
     std::istringstream in("; hello");
-    auto e = READ(in);
+    auto e = yall::read(in);
     CHECK(std::get<Reader_Responses>(e));
   }
 }
@@ -503,12 +503,12 @@ TEST_CASE("Check Cons Cells") {
   SECTION("multiple atoms in cons") {
     CHECK_THROWS(to_string(read_string("(1 a . c)").value()));
   }
-  SECTION("READ atoms in cons") {
+  SECTION("yall::read atoms in cons") {
     std::istringstream in("(quote ( 1 2 . 3) )");
-    CHECK_THROWS(READ(in));
+    CHECK_THROWS(yall::read(in));
   }
-  SECTION("READ atoms extra after dot") {
+  SECTION("yall::read atoms extra after dot") {
     std::istringstream in("(quote ( 1 . 3 4) )");
-    CHECK_THROWS(READ(in));
+    CHECK_THROWS(yall::read(in));
   }
 }

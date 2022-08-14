@@ -371,7 +371,7 @@ expression read_string(std::string str) {
   indicating that the last given line did not contain any express and
   evaluation can be skipped.
 */
-std::variant<expression, Reader_Responses> READ(std::istream &is) {
+std::variant<expression, Reader_Responses> yall::read(std::istream &is) {
   std::string expression_container;
   std::string accumulator;
   int open_parens = 0;
@@ -423,3 +423,4 @@ std::variant<expression, Reader_Responses> READ(std::istream &is) {
   // All open parens have been closed and an EOF has been recieved
   return END_OF_FILE;
 }
+std::string yall::print(expression::sexpr &e) { return to_string(e); };

@@ -3,8 +3,6 @@
 #include <cstring>
 #include <iostream>
 
-std::string PRINT(expression::sexpr &e) { return to_string(e); };
-
 // The default read-eval-print-loop
 void REPL(bool prompt) {
   std::string line;
@@ -18,7 +16,7 @@ void REPL(bool prompt) {
   for (;;) {
     auto should_exit = std::visit(overloaded{
                                       [&env, &prompter](expression e) {
-                                        std::cout << PRINT(eval(e, env))
+                                        std::cout << yall::print(yall::eval(e, env))
                                                   << std::endl;
                                         prompter();
                                         return false;
@@ -29,7 +27,7 @@ void REPL(bool prompt) {
                                         return false;
                                       },
                                   },
-                                  READ(std::cin));
+      yall::read(std::cin));
     if (should_exit)
       return;
   }

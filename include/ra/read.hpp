@@ -1,6 +1,6 @@
-#ifndef READF
-#define READF
-// #define MY_DEBUG
+#ifndef READ
+#define READ
+#define MY_DEBUG
 #ifdef MY_DEBUG
 #define DBG(X)                                                                 \
   { std::cout << X << std::endl; }
@@ -117,7 +117,6 @@ private:
 };
 
 enum Reader_Responses { END_OF_FILE, EMPTY_LINE };
-std::variant<expression, Reader_Responses> READ(std::istream &is);
 std::vector<token> tokenizer(std::string str);
 expression read_string(std::string str);
 expression::sexpr read_list(Reader &r);
@@ -125,5 +124,9 @@ expression::sexpr read_atom(Reader &r);
 expression::sexpr read_form(Reader &r);
 std::string to_string(expression::sexpr s);
 std::string to_string(expression::sexpr s, std::string accum);
+namespace yall {
+  std::variant<expression, Reader_Responses> read(std::istream &is);
+  std::string print(expression::sexpr &e);
+}
 
 #endif
