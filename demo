@@ -1,131 +1,200 @@
 #!/usr/bin/bash
 
+# This simply pipes the lisp code into YALL
+
+# If you want to use vim or any other text editor simply end the file
+# with .scm or set your editor to a some sort of scheme file type
+# supporting mode
+
 cat << EOF  | ./lisp
-(quote (Hello))
-;; (sleep 3)
-(quote (Welcome a quick video demo of YALL))
-;; (sleep 3)
-(quote (YALL is a simple scheme like language written in C++ intended to ))
-(quote (make extending existing C++ libraries))
-;; (sleep 10)
-(quote (So what can YALL do))
-;; (sleep 4)
-(quote (You can lists useing the LIST function like so (in lower case)))
-;; (sleep 2)
-(quote (list 1 2 3))
-(list 1 2 3)
-;; (sleep 10)
-(quote (you can access these elements using useing the CAR and CDR functions))
-;; (sleep 2)
-(quote (car (list 1 2 3)))
-(quote (will result in))
-;; (sleep 1)
-(car (list 1 2 3))
-;; (sleep 1)
-(quote (and))
-(quote (car (list 1 2 3)))
-(quote (will result in))
-;; (sleep 1)
-(cdr (list 1 2 3))
+(define short-sleep 4)
+(define mid-sleep  5)
+(define long-sleep 7)
 
-(quote (1 . 2))
-(quote (a . b))
-(quote (a . (1 . b)))
-;; TODO figure out what is oing wrong here
-;; (quote ((a . hello) . (1 . b)))
+(print (quote (Hello)))
+(sleep short-sleep)
 
+(print (quote (Welcome a demo of YALL a symbolic programming language)))
 
+(sleep short-sleep)
+
+(print (quote (YALL is a simple scheme like language written in C++)))
+
+(sleep long-sleep)
+
+(print (quote (So what can YALL do)))
+
+(sleep mid-sleep)
+
+;; Lists
+(print (quote (You can create lists useing the LIST function like so (in lower case))))
+
+(sleep short-sleep)
+
+(print (quote (list 1 2 3)))
+(print (quote (Will evaluate to)))
+
+(sleep short-sleep)
+
+(print (list 1 2 3))
+
+(sleep mid-sleep)
+
+(print (quote (you can access these elements using useing the CAR and CDR functions)))
+
+(sleep short-sleep)
+
+(print (quote (car (list 1 2 3))))
+(print (quote (will result in)))
+
+(sleep short-sleep)
+
+(print
+     (car (list 1 2 3)))
+
+(sleep short-sleep)
+
+(print (quote (and)))
+(print
+      (quote (cdr (list 1 2 3))))
+
+(print (quote (will result in)))
+
+(sleep short-sleep)
+
+(print
+      (cdr (list 1 2 3)))
+
+(sleep mid-sleep)
+
+;; Consing
+(print (quote
+       (Cons cells can be created using the cons function and the quote keyword)))
+
+(print (cons 1  2))
+(print (cons (quote a) (quote b)))
+(print (cons (quote a)
+             (cons 1  (quote b))))
+(print (cons (cons (quote a) (quote hello))
+             (cons 1         (quote b))))
+
+(sleep short-sleep)
+
+(print (quote (1 . 2)))
+(print (quote (a . b)))
+(print (quote (a . (1 . b))))
+(print (quote ((a . hello) . (1 . b))))
 (quote (a . (b . (c . (quote ())))))
+
+(sleep short-sleep)
+
+(print (quote (To save you some time the rest of this will
+               just evaluate and print so you do not have to wait
+               any longer)))
+
+(sleep long-sleep)
+
+;; Proposal based demo
 
 (list (quote a) (quote b) (quote c))
 
-(quote  (+ 1 2))
-(+ 1 2)
+(print (quote (+ 1 2)))
+(print (+ 1 2))
 
-(quote (cons 1 2))
-(cons 1 2)
+(print (quote (cons 1 2)))
+(print (cons 1 2))
 
-(quote (quote  (1 . 2)))
+(print (quote (quote  (1 . 2))))
+(print (quote  (1 . 2)))
 
+(print (quote (quote a)))
+(print (quote a))
 
-(quote (quote a))
+(print (quote (car (cons 1 2))))
+(print (car (cons 1 2)))
 
-(quote (car (cons 1 2)))
-(car (cons 1 2))
+(print (quote (cdr (cons 1 2))))
+(print (cdr (cons 1 2)))
 
-(quote (cdr (cons 1 2)))
+(print (quote (define x 1)))
+(print (define x 1))
 
-(cdr (cons 1 2))
+(print (quote (+ x 1)))
+(print (+ x 1))
 
-(quote (define x 1))
+(print (quote (define y 10)))
+(print (define y 10))
 
+(print (quote (+ y 1)))
+(print (+ y 1))
 
-(define x 1)
-
-
-(quote (+ x 1))
-(+ x 1)
-
-(quote (define y 10))
-(define y 10)
-(quote (+ y 1))
-
-(+ y 1)
-
-(quote (let ((x 1)
+(print (quote (let ((x 1)
              (y 9))
-         (+ x y)))
-
-(let ((x 1)
+         (+ x y))))
+(print (let ((x 1)
       (y 9))
-  (+ x y))
+  (+ x y)))
 
 
-(let ((x 1)
-      (y 9))
-  (let ((x 5))
-    (+ x y)))
+(print (quote (let ((x 1)
+                    (y 9))
+                  (let ((x 5))
+                   (+ x y)))))
 
-(quote (lambda (x) (+ 9 x)))
-(lambda (x) (+ 9 x))
+(print (let ((x 1)
+             (y 9))
+         (let ((x 5))
+           (+ x y))))
+
+(print (quote (lambda (x) (+ 9 x))))
+(print (lambda (x) (+ 9 x)))
 
 
-(quote ((lambda (x) (+ 9 x)) 2))
-((lambda (x) (+ 9 x)) 2)
+(print (quote ((lambda (x) (+ 9 x)) 2)))
+(print ((lambda (x) (+ 9 x)) 2))
 
-(define adder (lambda (x) (+ 9 x)))
-(adder 2)
+(print (quote (define adder (lambda (x) (+ 9 x)))))
+(print (quote (adder 2)))
+(print (define adder (lambda (x) (+ 9 x))))
+(print (adder 2))
 
-(quote (let ((adder (lambda (x) (+ 9 x))))
-         (adder 2)))
+(print (quote (let ((adder (lambda (x) (+ 9 x))))
+         (adder 2))))
 
-(let ((adder (lambda (x) (+ 9 x))))
-  (adder 2))
+(print (let ((adder (lambda (x) (+ 9 x))))
+  (adder 2)))
 
-(quote (define x (let ((x  1))
+(print (quote (define x (let ((x  1))
                    (lambda (y)
-                     (+ x y)))))
+                     (+ x y))))))
 
-(define x (let ((x  1))
+(print (define x (let ((x  1))
             (lambda (y)
-              (+ x y))))
+              (+ x y)))))
 
-(quote (x 2))
-(x 2)
+(print (quote (x 2)))
+(print (x 2))
 
 
-(quote (if (= 2 1)
+(print (quote (if (= 2 1)
            (+ 1 2)
-           (- 1 2)))
-(if (= 2 1)
+           (- 1 2))))
+(print (if (= 2 1)
     (+ 1 2)
-    (- 1 2))
+    (- 1 2)))
 
-(eq 1 1)
-(eq (quote a) (quote a))
-(eq (quote a) (quote b))
-(eq (quote a) 1)
-(eq #t #t)
-(eq #t #f)
+(print (quote (eq 1 1)))
+(print (eq 1 1))
+(print (quote (eq (quote a) (quote a))))
+(print (eq (quote a) (quote a)))
+(print (quote (eq (quote a) (quote b))))
+(print (eq (quote a) (quote b)))
+(print (quote (eq (quote a) 1)))
+(print (eq (quote a) 1))
+(print (quote (eq #t #t)))
+(print (eq #t #t))
+(print (quote (eq #t #f)))
+(print (eq #t #f))
 
+(quote (This will be printed since it is the last evaluated form))
 EOF
