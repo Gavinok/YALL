@@ -1,5 +1,6 @@
 #include "ra/read.hpp"
 #include <iostream>
+#include <stdexcept>
 
 // TODO consider changing this to a class later
 using symbol = std::string;
