@@ -77,7 +77,7 @@ std::vector<token> tokenizer(std::string str) {
         current_atom.push_back(*c);
         break;
       } else
-        throw std::runtime_error("Symbols only support alpha numerics");
+        throw std::invalid_argument("Symbols only support alpha numerics");
     }
   }
   store_cur(current_atom);
@@ -115,13 +115,14 @@ sexpr read_list(Reader &r) {
   using subexprs = expression::subexprs;
   using cpack = expression::cons_unpacked;
   r.next();
-  DBG("value stored in list " << r.peak());
+  DBG("value stored in list " + r.peak());
   subexprs exprs;
   while (r.peak() != ")") {
     if (r.peak() == ".") {
+      DBG("Possible dot spotted spotted");
       // Check for invalid state e.g. (. a)
       if (exprs.size() != 1)
-        throw std::runtime_error("Failed to extract cons cell");
+        throw std::invalid_argument("Failed to extract cons cell");
 
       DBG("Possible cons spotted");
       // skip the `.`
@@ -134,14 +135,17 @@ sexpr read_list(Reader &r) {
       exprs.pop_back();
       DBG("popped now ");
 
-      DBG("is emptynow ");
+      DBG("is empty now ");
       // extract the last element stored in the list
       auto a = expression(std::make_shared<cpack>(fst, read_form(r)));
 
       DBG("tuple finished");
+
       if (r.peak() != ")")
         throw std::runtime_error("Failed to extract cons cell");
 
+      // move past the closing parentheses
+      r.next();
       return a.value();
     } else {
       exprs.push_back(read_form(r));
@@ -188,7 +192,7 @@ boolean to_boolean(std::string s) {
     return boolean{true};
   if (s == "#f")
     return boolean{false};
-  throw std::runtime_error("Could not determin type of boolean");
+  throw std::invalid_argument("Could not determin type of boolean");
 }
 
 bool is_builtin(std::string s) {
@@ -225,8 +229,8 @@ sexpr read_atom(Reader &r) {
     return to_boolean(r.next());
   if (is_builtin(r.peak()))
     return to_symbol(r.next());
-  throw std::runtime_error("Expression could not be matched to an atom " +
-                           r.peak());
+  throw std::invalid_argument("Expression could not be matched to an atom " +
+                              r.peak());
 };
 
 void skip_comment(Reader &r) {
@@ -307,7 +311,7 @@ std::string to_string(sexpr s, std::string accum) {
   };
 
   auto invalid_state = [](std::monostate a [[gnu::unused]]) -> str {
-    throw std::runtime_error("Cannot determin type when printing ");
+    throw std::invalid_argument("Cannot determin type when printing ");
   };
 
   return std::visit(overloaded{cons_to_string, invalid_state, subexpr_to_string,
@@ -347,8 +351,10 @@ std::variant<expression, Reader_Responses> READ(std::istream &is) {
   while (std::getline(is, accumulator)) {
     open_parens = 0;
 
-    if (accumulator.empty())
+    if (accumulator.empty()) {
+      DBG("Accumulator was empty");
       continue; // skip blank lines
+    }
 
     expression_container += accumulator;
     Reader r(tokenizer(expression_container));
@@ -356,22 +362,27 @@ std::variant<expression, Reader_Responses> READ(std::istream &is) {
     try {
       // Skip blank lines early and comments early
       try {
+        DBG("skip comment");
         skip_comment(r);
+        DBG("done comment");
         if (r.peak() == "\n") {
           r.next();
         }
+        DBG("done new  comment");
       } catch (...) {
         /*
           This line either only contained comments or was blank since
           the only exception that could have been thrown is from the
           reader
         */
+        DBG("empty line ");
         return EMPTY_LINE;
       }
 
+      DBG("Reading from");
       return read_form(r);
 
-    } catch (...) {
+    } catch (std::runtime_error &e) {
       // This expression is not yet complete
       // handle unclosed parentheses
       // TODO this should probably only catch the error associated with

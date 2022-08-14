@@ -358,7 +358,7 @@ auto yall_car(expression &list) -> sexpr {
     if (inner_list.size() == 0)
       throw std::runtime_error("Car called on empty list");
 
-    // Only need to ensure that symbols stay quoted other wise 
+    // Only need to ensure that symbols stay quoted other wise
     return std::visit(overloaded{[](auto s) -> sexpr { return s; },
                                  [](symbol s) -> sexpr {
                                    return quoted<expression>{
