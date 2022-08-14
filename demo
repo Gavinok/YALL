@@ -1,5 +1,6 @@
 #!/usr/bin/bash
-cat <<EOF
+
+cat << EOF  | ./lisp
 (quote (Hello))
 ;; (sleep 3)
 (quote (Welcome a quick video demo of YALL))
@@ -127,4 +128,4 @@ cat <<EOF
 (eq #t #t)
 (eq #t #f)
 
-EOF | ./lisp
+EOF
