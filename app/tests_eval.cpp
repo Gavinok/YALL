@@ -188,7 +188,6 @@ TEST_CASE("Check equality") {
     CHECK(std::get<boolean>(eval(e, ev)).value == true);
   }
 }
-// TODO
 TEST_CASE("basic eval with eq false on expressions") {
   environment ev;
   auto e = read_string("(eq (quote (2)) (quote (2)))");
@@ -375,7 +374,6 @@ TEST_CASE("Check eq") {
     auto e = read_string("(eq 3 2)");
     CHECK(std::get<boolean>(eval(e, ev)).value == false);
   }
-  // TODO
   SECTION("basic eval with eq true symbol") {
     environment ev;
     auto e = read_string("(eq (quote a) (quote a))");

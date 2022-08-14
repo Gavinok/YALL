@@ -46,7 +46,6 @@ TEST_CASE("Check Reader") {
     CHECK(r.peak() == "hello");
     CHECK(r.next() == "hello");
     CHECK(r.peak() == "world");
-    // TODO determine how we want to handle when there is nothing left to read
   }
 
   SECTION("Check Tokenizer to Reader actual code") {
@@ -393,7 +392,7 @@ TEST_CASE("Check unclosed expression", "[constructor]") {
 //   CHECK(to_string(read_string("hello-world").value()) == "hello-world");
 // }
 
-// TODO proper alpha numerics
+
 TEST_CASE("Alpha Numerics") {
   SECTION("Check alpha numerics in list", "[constructor]") {
     CHECK(to_string(read_string("( a1 )").value()) == "(a1)");

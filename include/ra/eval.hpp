@@ -14,10 +14,7 @@ public:
   using subexprs = expression::subexprs;
   using args = subexprs::iterator;
   using args_size = size_t;
-  // TODO map of symbols?
   environment();
-  // XXX This use of a raw pointer should be replaced with something easier to
-  // manage
   environment(const environment &e) : bindings(e.bindings) {
     DBG("constructing environment with outerscope");
   };

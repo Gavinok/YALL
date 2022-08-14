@@ -2,7 +2,6 @@
 #include <iostream>
 #include <stdexcept>
 
-// TODO consider changing this to a class later
 using symbol = std::string;
 using sexpr = expression::sexpr;
 
@@ -291,7 +290,6 @@ std::string to_string(sexpr s, std::string accum) {
     return str_representation;
   };
 
-  // TODO this should not be necessary to call std::to_string
   auto numbers_to_string = [](int &x) -> str { return std::to_string(x); };
 
   auto symbol_to_string = [](symbol &x) -> str { return x; };
