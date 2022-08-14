@@ -3,7 +3,6 @@
 #include <cstring>
 #include <iostream>
 
-// XXX Temperary hack just so I can get output form an rvalue
 std::string PRINT(expression::sexpr &e) { return to_string(e); };
 
 // The default read-eval-print-loop
