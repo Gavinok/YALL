@@ -54,9 +54,6 @@ std::vector<token> tokenizer(std::string str) {
     case '+':
       store_cur_and_push(current_atom, "+");
       break;
-    case '-':
-      store_cur_and_push(current_atom, "-");
-      break;
     case '*':
       store_cur_and_push(current_atom, "*");
       break;
@@ -72,7 +69,7 @@ std::vector<token> tokenizer(std::string str) {
         store_cur(current_atom);
         break;
       }
-      if (isalpha(*c) || isdigit(*c)) {
+      if (isalpha(*c) || isdigit(*c) || *c == '-') {
         current_atom.push_back(*c);
         break;
       } else
@@ -155,10 +152,17 @@ sexpr read_list(Reader &r) {
 };
 
 bool is_number(std::string s) {
-  for (char &c : s) {
-    if (!std::isdigit(c))
+  auto c = s.begin();
+
+  // Check if the number starts
+  if (s.size() > 1 && *c == '-')
+    c++;
+
+  for (; c != s.end(); c++) {
+    if (!isdigit(*c))
       return false;
   }
+
   return true;
 }
 int to_number(std::string s) {
@@ -171,7 +175,7 @@ bool is_symbol(std::string s) {
   if (!std::isalpha(s.at(0)))
     return false;
   for (char &c : s) {
-    if (!(std::isalpha(c) || isdigit(c)))
+    if (!(std::isalpha(c) || isdigit(c) || c == '-'))
       return false;
   }
   return true;

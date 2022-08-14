@@ -383,16 +383,36 @@ TEST_CASE("Check unclosed expression", "[constructor]") {
   CHECK_THROWS(read_form(r));
 }
 
-// The grammar I made actually says we don't support this
-// TEST_CASE("Check cabobed symbol", "[constructor]") {
-//   CHECK(to_string(read_string("hello-world").value()) == "hello-world");
-// }
+TEST_CASE("Check negative in symbol", "[constructor]") {
+  CHECK_THROWS(to_string(read_string("( -  -10 -ay1 )").value()));
+}
 
-// TEST_CASE("Check ending in - symbol", "[constructor]") {
-//   CHECK(to_string(read_string("hello-world").value()) == "hello-world");
-// }
+TEST_CASE("Check negative numbers", "[constructor]") {
+  CHECK(to_string(read_string("( -  -10 ay1 )").value()) == "(- -10 ay1)");
+}
 
+TEST_CASE("Check double cabob numbers not") {
+  CHECK(to_string(read_string("( - -10 ay--1 )").value()) == "(- -10 ay--1)");
+}
 
+TEST_CASE("Check floating point cabob numbers not") {
+  CHECK_THROWS(to_string(read_string("( - 1.0 ay--1 )").value()));
+}
+
+TEST_CASE("Check double dash numbers not") {
+  CHECK_THROWS(to_string(read_string("( - --10 ay1 )").value()));
+}
+
+// The grammar I made actually says we support this but the document implies it
+TEST_CASE("Check cabobed symbol") {
+  CHECK(to_string(read_string("hello-world").value()) == "hello-world");
+}
+TEST_CASE("Check closing paren on new line list ") {
+  CHECK(to_string(read_string("(hello-world\n)").value()) == "(hello-world)");
+}
+TEST_CASE("Check closing paren on new line in cons") {
+  CHECK(to_string(read_string("(hello . world\n)").value()) == "(hello . world)");
+}
 TEST_CASE("Alpha Numerics") {
   SECTION("Check alpha numerics in list", "[constructor]") {
     CHECK(to_string(read_string("( a1 )").value()) == "(a1)");
@@ -412,7 +432,7 @@ TEST_CASE("Alpha Numerics") {
 }
 
 TEST_CASE("Check alpha numerics in list") {
-  CHECK(to_string(read_string("a1-").value()) == "a1");
+  CHECK(to_string(read_string("a1-").value()) == "a1-");
 }
 
 TEST_CASE("Always invalid input ") {
@@ -461,7 +481,6 @@ TEST_CASE("Check Cons Cells") {
   SECTION("Reading cons with unclosed paren") {
     CHECK_THROWS(to_string(read_string("( (   a .  . ( 1 . 2 ))").value()));
   }
-  // This is the cause of the leak
   SECTION("Reading cons with nothing before") {
     CHECK_THROWS(to_string(read_string("( ( . b  . ( 1 . 2 ))").value()));
   }
