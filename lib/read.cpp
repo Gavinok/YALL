@@ -103,49 +103,71 @@ token Reader::next() {
 };
 
 /*
+  read_cons attempts to read the contents of an cons cell with the pre
+  condition that the reader has just passed a period. The additonal
+  expression being passed must come from read_list to ensure that the
+  reader is inside a set of parentheses. The first value must be
+  stored in the list otherwise the cons cell is assumed to be
+  malformed.
+
+  Returns a new cons cell
+ */
+sexpr read_cons(Reader &r, expression::subexprs exprs) {
+  using cpack = expression::cons_unpacked;
+  DBG("Possible dot spotted spotted");
+  // Check for invalid state where there was no symbol before this dot e.g. (.
+  // a)
+  if (exprs.size() != 1)
+    throw std::invalid_argument("Failed to extract cons cell");
+
+  DBG("Possible cons spotted");
+
+  // skip the `.`
+  r.next();
+
+  DBG("looking at next");
+
+  // store the first element from the expression to be used a cons cell
+  expression fst = exprs.back();
+
+  DBG("is empty now ");
+  // extract the last element stored in the list
+  auto a = expression(std::make_shared<cpack>(fst, read_form(r)));
+
+  DBG("tuple finished");
+
+  if (r.peak() == "\n") {
+    r.next();
+  }
+  if (r.peak() != ")")
+    throw std::invalid_argument("Failed to extract cons cell");
+
+  // move past the closing parentheses
+  r.next();
+  return a.value();
+}
+/*
   read_list attempts to read the contents of an expression with the
   pre condition that the reader has just passed an opening
   parentheses.
+
+  Returns a set of subexprs
  */
 sexpr read_list(Reader &r) {
   using subexprs = expression::subexprs;
-  using cpack = expression::cons_unpacked;
   r.next();
   DBG("value stored in list " + r.peak());
   subexprs exprs;
   while (r.peak() != ")") {
     if (r.peak() == ".") {
-      DBG("Possible dot spotted spotted");
-      // Check for invalid state e.g. (. a)
-      if (exprs.size() != 1)
-        throw std::invalid_argument("Failed to extract cons cell");
-
-      DBG("Possible cons spotted");
-      // skip the `.`
-      r.next();
-      DBG("looking at next");
-
-      expression fst = exprs.back();
-
-      DBG("popping now ");
-      exprs.pop_back();
-      DBG("popped now ");
-
-      DBG("is empty now ");
-      // extract the last element stored in the list
-      auto a = expression(std::make_shared<cpack>(fst, read_form(r)));
-
-      DBG("tuple finished");
-
-      if (r.peak() != ")")
-        throw std::invalid_argument("Failed to extract cons cell");
-
-      // move past the closing parentheses
-      r.next();
-      return a.value();
-    } else {
-      exprs.push_back(read_form(r));
-    }
+      return read_cons(r, exprs);
+    } else
+      // skip new lines in expressions
+      if (r.peak() == "\n") {
+        r.next();
+      } else {
+        exprs.push_back(read_form(r));
+      }
   }
   r.next();
   return sexpr(exprs);
@@ -363,6 +385,7 @@ std::variant<expression, Reader_Responses> READ(std::istream &is) {
 
     expression_container += accumulator;
     Reader r(tokenizer(expression_container));
+    DBG("Value in expression container is '" + expression_container + "'");
 
     try {
       // Skip blank lines early and comments early
