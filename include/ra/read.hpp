@@ -1,25 +1,18 @@
 #ifndef READ
 #define READ
-#define MY_DEBUG
-#ifdef MY_DEBUG
-#define DBG(X)                                                                 \
-  { std::cout << X << std::endl; }
-#else
-#define DBG(X)                                                                 \
-  {}
-#endif
-
 #include <cstddef>
 #include <functional>
 #include <iostream>
 #include <ostream>
 #include <sstream>
 #include <string>
-// #include <vector>
 #include <list>
 #include <memory>
 #include <optional>
 #include <variant>
+
+#include "util.hpp"
+
 using symbol = std::string;
 // These overload templates are taken from
 // https://en.cppreference.com/w/cpp/utility/variant/visit
