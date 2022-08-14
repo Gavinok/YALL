@@ -6,28 +6,39 @@
 // The default read-eval-print-loop
 void REPL(bool prompt) {
   std::string line;
-  auto prompter = [prompt] {
-    if (prompt)
+
+  auto prompter = [prompt](std::optional<std::string> result) {
+    if (prompt) {
+      if (result.has_value())
+        std::cout << *result << std::endl;
       std::cout << "> ";
+    }
   };
-  prompter();
+
+  std::optional<std::string> last_result;
+  prompter(std::nullopt);
+
   environment env;
   // loop
   for (;;) {
-    auto should_exit = std::visit(overloaded{
-                                      [&env, &prompter](expression e) {
-                                        std::cout << yall::print(yall::eval(e, env))
-                                                  << std::endl;
-                                        prompter();
-                                        return false;
-                                      },
-                                      [](Reader_Responses r) {
-                                        if (r == END_OF_FILE)
-                                          return true;
-                                        return false;
-                                      },
-                                  },
-      yall::read(std::cin));
+    auto should_exit =
+        std::visit(overloaded{
+                       [&env, &prompter, &last_result](expression e) {
+                         // A new form has been processed
+                         last_result = yall::print(yall::eval(e, env));
+                         prompter(last_result);
+                         return false;
+                       },
+                       [&prompt, &last_result](Reader_Responses r) {
+                         if (r == END_OF_FILE) {
+                           if (!prompt && last_result.has_value())
+                             std::cout << *last_result << std::endl;
+                           return true;
+                         }
+                         return false;
+                       },
+                   },
+                   yall::read(std::cin));
     if (should_exit)
       return;
   }
