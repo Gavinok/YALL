@@ -39,20 +39,20 @@
   you can run it interactively with
 
   ,----
-  | yall -i
+  | lisp -i
   `----
 
 
   or
 
   ,----
-  | yall --interactive
+  | lisp --interactive
   `----
 
   If you want to pass it input from an existing file run
 
   ,----
-  | yall < file_to_run.scm
+  | lisp < file_to_run.scm
   `----
 
   Since yall is heavily inspired by scheme it's recommended to set your
